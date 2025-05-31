@@ -1,0 +1,77 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\{{requestName}};
+use App\Models\{{ModelName}};
+use Illuminate\Http\Request;
+
+class {{ModelName}}Controller extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        ${{modelPluralVariable}} = {{ModelName}}::latest()->paginate(15);
+        
+        return view('{{modelPluralVariable}}.index', compact('{{modelPluralVariable}}'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        return view('{{modelPluralVariable}}.create');
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store({{requestName}} $request)
+    {
+        {{ModelName}}::create($request->validated());
+
+        return redirect()->route('{{modelPluralVariable}}.index')
+            ->with('success', '{{ModelName}} created successfully.');
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show({{ModelName}} ${{modelVariable}})
+    {
+        return view('{{modelPluralVariable}}.show', compact('{{modelVariable}}'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit({{ModelName}} ${{modelVariable}})
+    {
+        return view('{{modelPluralVariable}}.edit', compact('{{modelVariable}}'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update({{requestName}} $request, {{ModelName}} ${{modelVariable}})
+    {
+        ${{modelVariable}}->update($request->validated());
+
+        return redirect()->route('{{modelPluralVariable}}.index')
+            ->with('success', '{{ModelName}} updated successfully.');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy({{ModelName}} ${{modelVariable}})
+    {
+        ${{modelVariable}}->delete();
+
+        return redirect()->route('{{modelPluralVariable}}.index')
+            ->with('success', '{{ModelName}} deleted successfully.');
+    }
+}

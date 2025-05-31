@@ -1,0 +1,41 @@
+{
+    "name": "sajidul-islam/laravel-crud-generator",
+    "description": "A simple Laravel CRUD generator with web interface",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Muhammad Sajidul Islam",
+            "email": "sajid285.me@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": "^8.0",
+        "laravel/framework": "^9.0|^10.0|^11.0",
+        "illuminate/support": "^9.0|^10.0|^11.0",
+        "doctrine/dbal": "^3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0|^10.0|^11.0|^12.0",
+        "orchestra/testbench": "^10.0|^11.0|^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "SajidUlIslam\\CrudGenerator\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SajidUlIslam\\CrudGenerator\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "SajidUlIslam\\CrudGenerator\\CrudGeneratorServiceProvider"
+            ]
+        }
+    }
+}
