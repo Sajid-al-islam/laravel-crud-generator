@@ -129,9 +129,86 @@ If no `config/crud-generator.php` appears after installation, the package works 
 3. **Generate CRUD**  
    Click the "Generate CRUD" button. The package will scaffold files and append routes. A "Results" panel will list every created/modified file and next steps (e.g., run `php artisan migrate`).
 
-### Programmatic (CLI/Artisan)
+### CLI/Artisan Command
 
-You can call the `CrudGeneratorService` from within an Artisan command or a controller:
+The package provides an Artisan command to generate CRUD operations directly from the command line:
+
+#### Basic Usage
+
+```bash
+php artisan crud:generate Book
+```
+
+#### Available Options
+
+- `{model}` - The name of the model (required)
+- `--table=` - The name of the table (optional, defaults to plural of model name)
+- `--fields=` - Fields in JSON format (optional)
+- `--no-migration` - Skip migration generation
+- `--with-seeder` - Generate seeder
+
+#### Examples
+
+**1. Interactive Mode (Recommended for beginners)**
+```bash
+php artisan crud:generate Post
+```
+This will prompt you to enter fields interactively.
+
+**2. With JSON Fields**
+```bash
+php artisan crud:generate Book --fields='[
+    {
+        "name": "title",
+        "type": "string",
+        "validation": "required|string|max:255",
+        "nullable": false
+    },
+    {
+        "name": "author",
+        "type": "string", 
+        "validation": "required|string|max:255",
+        "nullable": false
+    },
+    {
+        "name": "published_date",
+        "type": "date",
+        "validation": "nullable|date",
+        "nullable": true
+    },
+    {
+        "name": "summary",
+        "type": "text",
+        "validation": "nullable|string",
+        "nullable": true
+    },
+    {
+        "name": "is_best_seller",
+        "type": "boolean",
+        "validation": "boolean",
+        "nullable": false
+    }
+]'
+```
+
+**3. Custom Table Name**
+```bash
+php artisan crud:generate Product --table=products_catalog
+```
+
+**4. Skip Migration**
+```bash
+php artisan crud:generate Category --no-migration
+```
+
+**5. With Seeder**
+```bash
+php artisan crud:generate User --with-seeder
+```
+
+#### Programmatic Usage
+
+You can also call the `CrudGeneratorService` directly from within your own Artisan commands or controllers:
 
 ```php
 use SajidUlIslam\CrudGenerator\Services\CrudGeneratorService;
@@ -148,30 +225,7 @@ $data = [
             'validation' => 'required|string|max:255',
             'nullable'   => false,
         ],
-        [
-            'name'       => 'author',
-            'type'       => 'string',
-            'validation' => 'required|string|max:255',
-            'nullable'   => false,
-        ],
-        [
-            'name'       => 'published_date',
-            'type'       => 'date',
-            'validation' => 'nullable|date',
-            'nullable'   => true,
-        ],
-        [
-            'name'       => 'summary',
-            'type'       => 'text',
-            'validation' => 'nullable|string',
-            'nullable'   => true,
-        ],
-        [
-            'name'       => 'is_best_seller',
-            'type'       => 'boolean',
-            'validation' => 'boolean',
-            'nullable'   => false,
-        ],
+        // ... more fields
     ],
 ];
 
