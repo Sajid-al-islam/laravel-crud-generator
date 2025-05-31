@@ -105,6 +105,8 @@ If no `config/crud-generator.php` appears after installation, the package works 
 
 ### Web UI
 
+![crud-generator](https://github.com/user-attachments/assets/bd781b3c-db78-43e2-936a-d16809607ba0)
+
 1. **Access the Generator**  
    Open your browser and navigate to `/crud-generator`. If your application uses a custom prefix (e.g., `admin`), adjust the URL accordingly.
 
