@@ -67,7 +67,7 @@ A Laravel package that lets you scaffold complete CRUD (Create, Read, Update, De
 
 ## Configuration
 
-If a configuration file is provided, you can publish it with:
+you can publish the configuration file with:
 
 ```bash
 php artisan vendor:publish --provider="SajidUlIslam\CrudGenerator\CrudGeneratorServiceProvider"
