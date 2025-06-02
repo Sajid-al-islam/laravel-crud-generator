@@ -55,25 +55,7 @@ A Laravel package that lets you scaffold complete CRUD (Create, Read, Update, De
    composer require sajidul-islam/laravel-crud-generator
    ```
 
-2. **Publish Stubs (Optional)**  
-   If you want to customize default stubs, run:
-
-   ```bash
-   php artisan vendor:publish --provider="SajidUlIslam\CrudGenerator\CrudGeneratorServiceProvider" --tag=stubs
-   ```
-
-   This copies the `stubs/` directory into `resources/stubs/vendor/crud-generator/`.
-
-3. **Publish Views (UI) (Optional)**  
-   To override the built-in web UI, publish the view files:
-
-   ```bash
-   php artisan vendor:publish --provider="SajidUlIslam\CrudGenerator\CrudGeneratorServiceProvider" --tag=views
-   ```
-
-   You'll find the published Blade file(s) under `resources/views/vendor/crud-generator/`.
-
-4. **(Optional) Migrate Your Database**
+2. **(Optional) Migrate Your Database**
 
    ```bash
    php artisan migrate
