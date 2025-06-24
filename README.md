@@ -284,7 +284,11 @@ This package is released under the [MIT License](LICENSE). Use, modify, and dist
 
 ## Version
 
-1.0.0
+1.0.1
+
+## Repo activity
+
+![Alt](https://repobeats.axiom.co/api/embed/d558b77ba6f0fbdb39b076b5d6a323e05718ed93.svg "Repobeats analytics image")
 
 ## Acknowledgments
 
