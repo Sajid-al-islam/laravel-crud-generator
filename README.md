@@ -55,25 +55,41 @@ A Laravel package that lets you scaffold complete CRUD (Create, Read, Update, De
    composer require sajidul-islam/laravel-crud-generator
    ```
 
-2. **Publish Stubs (Optional)**  
-   If you want to customize default stubs, run:
+2. **Publish Assets (Optional)**  
+   The package allows you to publish different assets for customization:
 
+   **Publish Everything:**
    ```bash
-   php artisan vendor:publish --provider="SajidUlIslam\CrudGenerator\CrudGeneratorServiceProvider" --tag=stubs
+   php artisan vendor:publish --provider="SajidUlIslam\CrudGenerator\CrudGeneratorServiceProvider"
    ```
+   
+   **Or publish specific assets using tags:**
 
-   This copies the `stubs/` directory into `resources/stubs/vendor/crud-generator/`.
-
-3. **Publish Views (UI) (Optional)**  
-   To override the built-in web UI, publish the view files:
-
+   **Stubs (Templates for Generated Code):**
    ```bash
-   php artisan vendor:publish --provider="SajidUlIslam\CrudGenerator\CrudGeneratorServiceProvider" --tag=views
+   php artisan vendor:publish --tag=crud-generator-stubs
    ```
+   This copies stub files to `resources/stubs/vendor/crud-generator/`. Customize these to change how your models, controllers, views, etc. are generated.
 
-   You'll find the published Blade file(s) under `resources/views/vendor/crud-generator/`.
+   **Configuration File:**
+   ```bash
+   php artisan vendor:publish --tag=crud-generator-config
+   ```
+   This creates `config/crud-generator.php` where you can customize paths, namespaces, and field types.
 
-4. **(Optional) Migrate Your Database**
+   **Views (Web UI Interface):**
+   ```bash
+   php artisan vendor:publish --tag=crud-generator-views
+   ```
+   This publishes the generator's web interface to `resources/views/vendor/crud-generator/`.
+
+   **Routes:**
+   ```bash
+   php artisan vendor:publish --tag=crud-generator-routes
+   ```
+   This publishes the package routes to `routes/crud-generator.php` for customization.
+
+3. **(Optional) Migrate Your Database**
 
    ```bash
    php artisan migrate
@@ -85,19 +101,21 @@ A Laravel package that lets you scaffold complete CRUD (Create, Read, Update, De
 
 ## Configuration
 
-If a configuration file is provided, you can publish it with:
+To customize the package behavior, publish the configuration file:
 
 ```bash
-php artisan vendor:publish --provider="SajidUlIslam\CrudGenerator\CrudGeneratorServiceProvider"
+php artisan vendor:publish --tag=crud-generator-config
 ```
 
-Typical settings include:
+This creates `config/crud-generator.php` where you can configure:
 
-* Custom namespaces for generated classes.
-* Default view paths.
-* List of available field types in the UI dropdown.
+* **Route Prefix** - URL prefix for the web UI (default: `crud-generator`)
+* **Middleware** - Middleware applied to the web UI routes
+* **Paths** - Custom paths for generated files (models, controllers, views, etc.)
+* **Namespaces** - Custom namespaces for generated classes  
+* **Field Types** - Available field types in the UI dropdown
 
-If no `config/crud-generator.php` appears after installation, the package works out-of-the-box with sensible defaults.
+If you don't publish the config, the package uses sensible defaults out-of-the-box.
 
 ---
 

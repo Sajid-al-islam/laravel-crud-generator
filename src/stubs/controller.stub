@@ -9,11 +9,40 @@ use Illuminate\Http\Request;
 class {{ModelName}}Controller extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource with search, sort, and pagination.
      */
-    public function index()
+    public function index(Request $request)
     {
-        ${{modelPluralVariable}} = {{ModelName}}::latest()->paginate(15);
+        $query = {{ModelName}}::query();
+        
+        // Search functionality
+        $searchableFields = [{{searchableFieldsArray}}];
+        
+        if ($request->filled('search') && !empty($searchableFields)) {
+            $searchTerm = $request->search;
+            
+            $query->where(function($q) use ($searchTerm, $searchableFields) {
+                foreach ($searchableFields as $field) {
+                    $q->orWhere($field, 'like', "%{$searchTerm}%");
+                }
+            });
+        }
+        
+        // Sorting functionality
+        $sortableFields = [{{sortableFieldsArray}}];
+        if ($request->filled('sort') && in_array($request->sort, $sortableFields)) {
+            $direction = $request->get('direction', 'asc');
+            $direction = in_array($direction, ['asc', 'desc']) ? $direction : 'asc';
+            $query->orderBy($request->sort, $direction);
+        } else {
+            $query->latest();
+        }
+        
+        // Pagination with per-page selection
+        $perPage = $request->get('per_page', 15);
+        $perPage = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 15;
+        
+        ${{modelPluralVariable}} = $query->paginate($perPage)->withQueryString();
         
         return view('{{modelPluralVariable}}.index', compact('{{modelPluralVariable}}'));
     }

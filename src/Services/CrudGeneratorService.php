@@ -11,7 +11,21 @@ class CrudGeneratorService
 
     public function __construct()
     {
-        $this->stubPath = __DIR__ . '/../stubs/';
+        $publishedStubPath = resource_path('stubs/vendor/crud-generator/');
+        
+        if (File::exists($publishedStubPath)) {
+            $this->stubPath = $publishedStubPath;
+        } else {
+            $this->stubPath = __DIR__ . '/../stubs/';
+        }
+    }
+
+    /**
+     * Get the path to a stub file, checking published location first
+     */
+    protected function getStubPath($stubName)
+    {
+        return $this->stubPath . $stubName;
     }
 
     public function generateCrud($data)
@@ -22,24 +36,18 @@ class CrudGeneratorService
 
         $generatedFiles = [];
 
-        // Generate Model
         $generatedFiles['model'] = $this->generateModel($modelName, $tableName, $fields);
 
-        // Generate Migration (if requested)
         if ($data['with_migration']) {
             $generatedFiles['migration'] = $this->generateMigration($tableName, $fields);
         }
 
-        // Generate Controller
         $generatedFiles['controller'] = $this->generateController($modelName, $fields);
 
-        // Generate Request
         $generatedFiles['request'] = $this->generateRequest($modelName, $fields);
 
-        // Generate Views
         $generatedFiles['views'] = $this->generateViews($modelName, $fields);
 
-        // Add Routes
         $generatedFiles['routes'] = $this->addRoutes($modelName);
 
         return $generatedFiles;
@@ -102,11 +110,19 @@ class CrudGeneratorService
         $modelVariable = Str::camel($modelName);
         $modelPluralVariable = Str::camel(Str::plural($modelName));
 
+        // Get searchable and sortable fields
+        $searchableFields = $this->getSearchableFields($fields);
+        $sortableFields = $this->getSortableFields($fields);
+        $searchableFieldsArray = $this->getFieldsAsArray($searchableFields);
+        $sortableFieldsArray = $this->getFieldsAsArray($sortableFields);
+
         $replacements = [
             '{{ModelName}}' => $modelName,
             '{{modelVariable}}' => $modelVariable,
             '{{modelPluralVariable}}' => $modelPluralVariable,
             '{{requestName}}' => $modelName . 'Request',
+            '{{searchableFieldsArray}}' => $searchableFieldsArray,
+            '{{sortableFieldsArray}}' => $sortableFieldsArray,
         ];
 
         $content = str_replace(array_keys($replacements), array_values($replacements), $stub);
@@ -315,28 +331,80 @@ class CrudGeneratorService
         $modelPluralVariable = Str::camel(Str::plural($modelName));
         $routePrefix = Str::lower(Str::plural($modelName));
 
-        // Generate different form fields for create and edit
-        $createFormFields = $this->generateFormFields($fields, 'create', $modelVariable);
-        $editFormFields = $this->generateFormFields($fields, 'edit', $modelVariable);
+        // Filter fields by visibility
+        $createFields = $this->filterFieldsByVisibility($fields, 'create');
+        $editFields = $this->filterFieldsByVisibility($fields, 'edit');
+        $indexFields = $this->filterFieldsByVisibility($fields, 'index');
+        $showFields = $this->filterFieldsByVisibility($fields, 'show');
 
-        $tableHeaders = $this->generateTableHeaders($fields);
-        $tableData = $this->generateTableData($fields, $modelVariable);
-        $showFields = $this->generateShowFields($fields, $modelVariable);
+        // Generate searchable and sortable field lists
+        $searchableFields = $this->getSearchableFields($fields);
+        $sortableFields = $this->getSortableFields($fields);
+
+        // Generate searchable/sortable fields arrays for controller
+        $searchableFieldsArray = $this->getFieldsAsArray($searchableFields);
+        $sortableFieldsArray = $this->getFieldsAsArray($sortableFields);
 
         $replacements = [
             '{{ModelName}}' => $modelName,
             '{{modelVariable}}' => $modelVariable,
             '{{modelPluralVariable}}' => $modelPluralVariable,
             '{{routePrefix}}' => $routePrefix,
-            '{{formFields}}' => $createFormFields, // Default for create
-            '{{createFormFields}}' => $createFormFields,
-            '{{editFormFields}}' => $editFormFields,
-            '{{tableHeaders}}' => $tableHeaders,
-            '{{tableData}}' => $tableData,
-            '{{showFields}}' => $showFields,
+            '{{createFormFields}}' => $this->generateFormFields($createFields, 'create', $modelVariable),
+            '{{editFormFields}}' => $this->generateFormFields($editFields, 'edit', $modelVariable),
+            '{{tableHeaders}}' => $this->generateTableHeaders($indexFields),
+            '{{tableData}}' => $this->generateTableData($indexFields, $modelVariable),
+            '{{showFields}}' => $this->generateShowFields($showFields, $modelVariable),
+            '{{searchableFields}}' => $searchableFields,
+            '{{sortableFields}}' => $sortableFields,
+            '{{searchableFieldsArray}}' => $searchableFieldsArray,
+            '{{sortableFieldsArray}}' => $sortableFieldsArray,
         ];
 
         return str_replace(array_keys($replacements), array_values($replacements), $stub);
+    }
+
+    protected function filterFieldsByVisibility($fields, $page)
+    {
+        return array_filter($fields, function ($field) use ($page) {
+            return isset($field['visibility'][$page]) && $field['visibility'][$page];
+        });
+    }
+
+    protected function getSearchableFields($fields)
+    {
+        $searchable = [];
+        foreach ($fields as $field) {
+            if (isset($field['table']['searchable']) && $field['table']['searchable']) {
+                $searchable[] = $field['name'];
+            }
+        }
+        return implode(',', $searchable);
+    }
+
+    protected function getSortableFields($fields)
+    {
+        $sortable = [];
+        foreach ($fields as $field) {
+            if (isset($field['table']['sortable']) && $field['table']['sortable']) {
+                $sortable[] = $field['name'];
+            }
+        }
+        return implode(',', $sortable);
+    }
+
+    protected function getFieldsAsArray($commaSeparatedFields)
+    {
+        if (empty($commaSeparatedFields)) {
+            return '';
+        }
+        
+        $fields = explode(',', $commaSeparatedFields);
+        $quotedFields = array_map(function($field) {
+            return "'" . trim($field) . "'";
+        }, $fields);
+        
+        return implode(', ', $quotedFields);
     }
 
     protected function generateFormFields($fields, $viewType = 'create', $modelVariable = null)
@@ -393,7 +461,22 @@ class CrudGeneratorService
         $html = '';
         foreach ($fields as $field) {
             $label = Str::title(str_replace('_', ' ', $field['name']));
-            $html .= "            <th>{$label}</th>\n";
+            $isSortable = isset($field['table']['sortable']) && $field['table']['sortable'];
+            
+            if ($isSortable) {
+                $html .= "            <th>\n";
+                $html .= "                <a href=\"{{ request()->fullUrlWithQuery(['sort' => '{$field['name']}', 'direction' => request('direction') === 'asc' ? 'desc' : 'asc']) }}\" class=\"text-decoration-none text-dark\">\n";
+                $html .= "                    {$label}\n";
+                $html .= "                    @if(request('sort') === '{$field['name']}')\n";
+                $html .= "                        <i class=\"fas fa-sort-{{ request('direction') === 'asc' ? 'up' : 'down' }}\"></i>\n";
+                $html .= "                    @else\n";
+                $html .= "                        <i class=\"fas fa-sort text-muted\"></i>\n";
+                $html .= "                    @endif\n";
+                $html .= "                </a>\n";
+                $html .= "            </th>\n";
+            } else {
+                $html .= "            <th>{$label}</th>\n";
+            }
         }
         return $html;
     }
@@ -402,8 +485,50 @@ class CrudGeneratorService
     {
         $html = '';
         foreach ($fields as $field) {
-            $html .= "                <td>{{ \${$modelVariable}->{$field['name']} }}</td>\n";
+            $formatter = $field['table']['formatter'] ?? 'text';
+            
+            switch ($formatter) {
+                case 'badge':
+                    $html .= $this->generateBadgeColumn($field, $modelVariable);
+                    break;
+                case 'date':
+                    $html .= "                <td>{{ \${$modelVariable}->{$field['name']}?->format('M d, Y') }}</td>\n";
+                    break;
+                case 'boolean':
+                    $html .= "                <td>\n";
+                    $html .= "                    @if(\${$modelVariable}->{$field['name']})\n";
+                    $html .= "                        <span class=\"badge bg-success\">Yes</span>\n";
+                    $html .= "                    @else\n";
+                    $html .= "                        <span class=\"badge bg-secondary\">No</span>\n";
+                    $html .= "                    @endif\n";
+                    $html .= "                </td>\n";
+                    break;
+                case 'link':
+                    $html .= "                <td><a href=\"{{ route('{{routePrefix}}.show', \${$modelVariable}) }}\" class=\"text-primary\">{{ \${$modelVariable}->{$field['name']} }}</a></td>\n";
+                    break;
+                default:
+                    $html .= "                <td>{{ \${$modelVariable}->{$field['name']} }}</td>\n";
+            }
         }
+        return $html;
+    }
+
+    protected function generateBadgeColumn($field, $modelVariable)
+    {
+        $badgeColors = $field['table']['badgeColors'] ?? [];
+        
+        if (empty($badgeColors)) {
+            return "                <td><span class=\"badge bg-primary\">{{ \${$modelVariable}->{$field['name']} }}</span></td>\n";
+        }
+        
+        $html = "                <td>\n";
+        $html .= "                    @php\n";
+        $html .= "                        \$badgeMap = " . var_export($badgeColors, true) . ";\n";
+        $html .= "                        \$color = \$badgeMap[\${$modelVariable}->{$field['name']}] ?? 'secondary';\n";
+        $html .= "                    @endphp\n";
+        $html .= "                    <span class=\"badge bg-{{ \$color }}\">{{ \${$modelVariable}->{$field['name']} }}</span>\n";
+        $html .= "                </td>\n";
+        
         return $html;
     }
 
