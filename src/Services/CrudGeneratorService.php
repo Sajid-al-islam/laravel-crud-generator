@@ -42,11 +42,13 @@ class CrudGeneratorService
             $generatedFiles['migration'] = $this->generateMigration($tableName, $fields);
         }
 
-        $generatedFiles['controller'] = $this->generateController($modelName, $fields);
+        $layout = $data['layout'] ?? 'layouts.app';
+
+        $generatedFiles['controller'] = $this->generateController($modelName, $fields, $layout);
 
         $generatedFiles['request'] = $this->generateRequest($modelName, $fields);
 
-        $generatedFiles['views'] = $this->generateViews($modelName, $fields);
+        $generatedFiles['views'] = $this->generateViews($modelName, $fields, $layout);
 
         $generatedFiles['routes'] = $this->addRoutes($modelName);
 
@@ -103,7 +105,7 @@ class CrudGeneratorService
         return $path;
     }
 
-    protected function generateController($modelName, $fields)
+    protected function generateController($modelName, $fields, $layout = 'layouts.app')
     {
         $stub = File::get($this->stubPath . 'controller.stub');
 
@@ -123,6 +125,7 @@ class CrudGeneratorService
             '{{requestName}}' => $modelName . 'Request',
             '{{searchableFieldsArray}}' => $searchableFieldsArray,
             '{{sortableFieldsArray}}' => $sortableFieldsArray,
+            '{{layout}}' => $layout,
         ];
 
         $content = str_replace(array_keys($replacements), array_values($replacements), $stub);
@@ -192,8 +195,11 @@ class CrudGeneratorService
         }
     }
 
-    protected function generateViews($modelName, $fields)
+    protected function generateViews($modelName, $fields, $layout = 'layouts.app')
     {
+        // Ensure layout exists
+        $this->ensureLayoutExists($layout);
+
         $viewPath = resource_path('views/' . Str::lower(Str::plural($modelName)));
 
         if (!File::exists($viewPath)) {
@@ -204,8 +210,8 @@ class CrudGeneratorService
         $generatedViews = [];
 
         foreach ($views as $view) {
-            $stub = File::get($this->stubPath . "views/{$view}.stub");
-            $content = $this->replaceViewPlaceholders($stub, $modelName, $fields);
+            $stub = File::get($this->getStubPath("views/{$view}.stub"));
+            $content = $this->replaceViewPlaceholders($stub, $modelName, $fields, $layout);
 
             $filePath = $viewPath . "/{$view}.blade.php";
             File::put($filePath, $content);
@@ -214,6 +220,8 @@ class CrudGeneratorService
 
         return $generatedViews;
     }
+
+
 
     protected function addRoutes($modelName)
     {
@@ -325,7 +333,7 @@ class CrudGeneratorService
         return $line;
     }
 
-    protected function replaceViewPlaceholders($stub, $modelName, $fields)
+    protected function replaceViewPlaceholders($stub, $modelName, $fields, $layout = 'layouts.app')
     {
         $modelVariable = Str::camel($modelName);
         $modelPluralVariable = Str::camel(Str::plural($modelName));
@@ -349,6 +357,8 @@ class CrudGeneratorService
             '{{ModelName}}' => $modelName,
             '{{modelVariable}}' => $modelVariable,
             '{{modelPluralVariable}}' => $modelPluralVariable,
+            '${{modelVariable}}' => '$' . $modelVariable,
+            '${{modelPluralVariable}}' => '$' . $modelPluralVariable,
             '{{routePrefix}}' => $routePrefix,
             '{{createFormFields}}' => $this->generateFormFields($createFields, 'create', $modelVariable),
             '{{editFormFields}}' => $this->generateFormFields($editFields, 'edit', $modelVariable),
@@ -359,6 +369,7 @@ class CrudGeneratorService
             '{{sortableFields}}' => $sortableFields,
             '{{searchableFieldsArray}}' => $searchableFieldsArray,
             '{{sortableFieldsArray}}' => $sortableFieldsArray,
+            '{{layout}}' => $layout,
         ];
 
         return str_replace(array_keys($replacements), array_values($replacements), $stub);
@@ -495,11 +506,22 @@ class CrudGeneratorService
                     $html .= "                <td>{{ \${$modelVariable}->{$field['name']}?->format('M d, Y') }}</td>\n";
                     break;
                 case 'boolean':
+                    $badgeTexts = $field['table']['badgeTexts'] ?? [];
+                    $badgeColors = $field['table']['badgeColors'] ?? [];
+                    
+                    // Get text labels or use defaults
+                    $trueText = $badgeTexts['1'] ?? ($badgeTexts[1] ?? 'Yes');
+                    $falseText = $badgeTexts['0'] ?? ($badgeTexts[0] ?? 'No');
+                    
+                    // Get colors or use defaults
+                    $trueColor = $badgeColors['1'] ?? ($badgeColors[1] ?? 'success');
+                    $falseColor = $badgeColors['0'] ?? ($badgeColors[0] ?? 'secondary');
+                    
                     $html .= "                <td>\n";
                     $html .= "                    @if(\${$modelVariable}->{$field['name']})\n";
-                    $html .= "                        <span class=\"badge bg-success\">Yes</span>\n";
+                    $html .= "                        <span class=\"badge bg-{$trueColor}\">{$trueText}</span>\n";
                     $html .= "                    @else\n";
-                    $html .= "                        <span class=\"badge bg-secondary\">No</span>\n";
+                    $html .= "                        <span class=\"badge bg-{$falseColor}\">{$falseText}</span>\n";
                     $html .= "                    @endif\n";
                     $html .= "                </td>\n";
                     break;
@@ -516,17 +538,34 @@ class CrudGeneratorService
     protected function generateBadgeColumn($field, $modelVariable)
     {
         $badgeColors = $field['table']['badgeColors'] ?? [];
+        $badgeTexts = $field['table']['badgeTexts'] ?? [];
         
-        if (empty($badgeColors)) {
+        // If no colors and no texts, use simple badge
+        if (empty($badgeColors) && empty($badgeTexts)) {
             return "                <td><span class=\"badge bg-primary\">{{ \${$modelVariable}->{$field['name']} }}</span></td>\n";
         }
         
         $html = "                <td>\n";
         $html .= "                    @php\n";
-        $html .= "                        \$badgeMap = " . var_export($badgeColors, true) . ";\n";
-        $html .= "                        \$color = \$badgeMap[\${$modelVariable}->{$field['name']}] ?? 'secondary';\n";
+        
+        // Add color mapping if provided
+        if (!empty($badgeColors)) {
+            $html .= "                        \$colorMap = " . var_export($badgeColors, true) . ";\n";
+            $html .= "                        \$color = \$colorMap[\${$modelVariable}->{$field['name']}] ?? 'secondary';\n";
+        } else {
+            $html .= "                        \$color = 'secondary';\n";
+        }
+        
+        // Add text mapping if provided
+        if (!empty($badgeTexts)) {
+            $html .= "                        \$textMap = " . var_export($badgeTexts, true) . ";\n";
+            $html .= "                        \$text = \$textMap[\${$modelVariable}->{$field['name']}] ?? \${$modelVariable}->{$field['name']};\n";
+        } else {
+            $html .= "                        \$text = \${$modelVariable}->{$field['name']};\n";
+        }
+        
         $html .= "                    @endphp\n";
-        $html .= "                    <span class=\"badge bg-{{ \$color }}\">{{ \${$modelVariable}->{$field['name']} }}</span>\n";
+        $html .= "                    <span class=\"badge bg-{{ \$color }}\">{{ \$text }}</span>\n";
         $html .= "                </td>\n";
         
         return $html;
@@ -543,5 +582,22 @@ class CrudGeneratorService
             $html .= "    </div>\n";
         }
         return $html;
+    }
+
+    protected function ensureLayoutExists($layoutName)
+    {
+        $viewPath = resource_path('views/' . str_replace('.', '/', $layoutName) . '.blade.php');
+        
+        if (!File::exists($viewPath)) {
+            // Create directory if needed
+            $directory = dirname($viewPath);
+            if (!File::isDirectory($directory)) {
+                File::makeDirectory($directory, 0755, true);
+            }
+            
+            // Copy default layout stub
+            $stub = File::get($this->getStubPath('layout.stub'));
+            File::put($viewPath, $stub);
+        }
     }
 }

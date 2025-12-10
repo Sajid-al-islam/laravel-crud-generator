@@ -34,6 +34,9 @@ class CrudGeneratorController extends Controller
             'fields.*.name' => 'required|string',
             'fields.*.type' => 'required|string',
             'fields.*.validation' => 'nullable|string',
+            'layout' => 'nullable|string',
+            'with_migration' => 'nullable|boolean',
+            'with_seeder' => 'nullable|boolean',
         ]);
 
         try {
@@ -41,6 +44,7 @@ class CrudGeneratorController extends Controller
                 'table_name' => $request->table_name,
                 'model_name' => $request->model_name,
                 'fields' => $request->fields,
+                'layout' => $request->layout,
                 'with_migration' => $request->boolean('with_migration', true),
                 'with_seeder' => $request->boolean('with_seeder', false),
             ]);
