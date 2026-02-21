@@ -381,26 +381,16 @@
                             </div>
                         </div>
 
-                        <!-- Badge Color Mapping -->
+                        <!-- Badge Mapping -->
                         <div id="badge-colors-${fieldCounter}" class="space-y-2 hidden">
-                            <label class="text-sm font-medium text-foreground">Badge Colors (value → color)</label>
+                            <label class="text-sm font-medium text-foreground">Badge Mapping (value → color + text)</label>
+                            <p class="text-xs text-muted-foreground mb-2">Map values to badge colors and display text</p>
                             <div id="badge-mappings-${fieldCounter}" class="space-y-2"></div>
                             <button type="button" 
                                 onclick="addBadgeMapping(${fieldCounter})" 
                                 class="text-sm text-primary hover:text-primary/80 flex items-center">
-                                <i class="fas fa-plus mr-1"></i>Add Color Mapping
+                                <i class="fas fa-plus mr-1"></i>Add Badge Mapping
                             </button>
-                            
-                            <div class="border-t border-border pt-3 mt-3">
-                                <label class="text-sm font-medium text-foreground">Badge Text (value → custom label)</label>
-                                <p class="text-xs text-muted-foreground mb-2">Map values to custom display text (e.g., 0 → Inactive)</p>
-                                <div id="badge-text-mappings-${fieldCounter}" class="space-y-2"></div>
-                                <button type="button" 
-                                    onclick="addBadgeTextMapping(${fieldCounter})" 
-                                    class="text-sm text-primary hover:text-primary/80 flex items-center">
-                                    <i class="fas fa-plus mr-1"></i>Add Text Mapping
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -425,22 +415,17 @@
             if (name.includes('status') || name.includes('state')) {
                 toggleBadgeColors(fieldCounter);
                 document.getElementById(`formatter-${fieldCounter}`).value = 'badge';
-                addBadgeMapping(fieldCounter, 'active', 'success');
-                addBadgeMapping(fieldCounter, 'inactive', 'secondary');
-                addBadgeMapping(fieldCounter, 'pending', 'warning');
-                addBadgeTextMapping(fieldCounter, 'active', 'Active');
-                addBadgeTextMapping(fieldCounter, 'inactive', 'Inactive');
-                addBadgeTextMapping(fieldCounter, 'pending', 'Pending');
+                addBadgeMapping(fieldCounter, 'active', 'success', 'Active');
+                addBadgeMapping(fieldCounter, 'inactive', 'secondary', 'Inactive');
+                addBadgeMapping(fieldCounter, 'pending', 'warning', 'Pending');
             }
             
             // Add default badge mappings for boolean fields
             if (type === 'boolean') {
                 toggleBadgeColors(fieldCounter);
                 document.getElementById(`formatter-${fieldCounter}`).value = 'boolean';
-                addBadgeMapping(fieldCounter, '1', 'success');
-                addBadgeMapping(fieldCounter, '0', 'secondary');
-                addBadgeTextMapping(fieldCounter, '1', 'Active');
-                addBadgeTextMapping(fieldCounter, '0', 'Inactive');
+                addBadgeMapping(fieldCounter, '1', 'success', 'Active');
+                addBadgeMapping(fieldCounter, '0', 'secondary', 'Inactive');
             }
         }
 
@@ -470,7 +455,7 @@
 
         let badgeMappingCounter = {};
 
-        function addBadgeMapping(fieldId, value = '', color = 'primary') {
+        function addBadgeMapping(fieldId, value = '', color = 'primary', text = '') {
             if (!badgeMappingCounter[fieldId]) badgeMappingCounter[fieldId] = 0;
             badgeMappingCounter[fieldId]++;
             
@@ -481,14 +466,18 @@
                 <div id="badge-mapping-${mappingId}" class="flex gap-2">
                     <input type="text" 
                         class="flex-1 px-3 py-2 border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring" 
-                        name="fields[${fieldId}][table][badgeColors][values][]" 
-                        value="${value}" placeholder="Value (e.g., active)">
-                    <select class="px-3 py-2 border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring" 
-                        name="fields[${fieldId}][table][badgeColors][colors][]">
+                        name="fields[${fieldId}][table][badgeMappings][values][]" 
+                        value="${value}" placeholder="Value (e.g., 1, active)">
+                    <select class="flex-1 px-3 py-2 border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring" 
+                        name="fields[${fieldId}][table][badgeMappings][colors][]">
                         ${badgeColors.map(c => 
                             `<option value="${c}" ${c === color ? 'selected' : ''}>${c}</option>`
                         ).join('')}
                     </select>
+                    <input type="text" 
+                        class="flex-1 px-3 py-2 border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring" 
+                        name="fields[${fieldId}][table][badgeMappings][texts][]" 
+                        value="${text}" placeholder="Display text (e.g., Active)">
                     <button type="button" 
                         onclick="removeBadgeMapping('${mappingId}')" 
                         class="px-3 py-2 border border-red-200 text-red-500 rounded-md hover:bg-red-50 transition-colors">
@@ -502,40 +491,6 @@
 
         function removeBadgeMapping(mappingId) {
             document.getElementById(`badge-mapping-${mappingId}`).remove();
-        }
-
-        let badgeTextMappingCounter = {};
-
-        function addBadgeTextMapping(fieldId, value = '', text = '') {
-            if (!badgeTextMappingCounter[fieldId]) badgeTextMappingCounter[fieldId] = 0;
-            badgeTextMappingCounter[fieldId]++;
-            
-            const mappingId = `${fieldId}-${badgeTextMappingCounter[fieldId]}`;
-            const container = document.getElementById(`badge-text-mappings-${fieldId}`);
-            
-            const mappingHtml = `
-                <div id="badge-text-mapping-${mappingId}" class="flex gap-2">
-                    <input type="text" 
-                        class="flex-1 px-3 py-2 border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring" 
-                        name="fields[${fieldId}][table][badgeTexts][values][]" 
-                        value="${value}" placeholder="Value (e.g., 0, 1, draft)">
-                    <input type="text" 
-                        class="flex-1 px-3 py-2 border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring" 
-                        name="fields[${fieldId}][table][badgeTexts][texts][]" 
-                        value="${text}" placeholder="Display Text (e.g., Inactive, Active)">
-                    <button type="button" 
-                        onclick="removeBadgeTextMapping('${mappingId}')" 
-                        class="px-3 py-2 border border-red-200 text-red-500 rounded-md hover:bg-red-50 transition-colors">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            `;
-            
-            container.insertAdjacentHTML('beforeend', mappingHtml);
-        }
-
-        function removeBadgeTextMapping(mappingId) {
-            document.getElementById(`badge-text-mapping-${mappingId}`).remove();
         }
 
         function removeField(fieldId, event) {
@@ -590,18 +545,18 @@
                     }
                 };
                 
-                // Parse badge colors
-                const badgeValues = formData.getAll(`fields[${index}][table][badgeColors][values][]`);
-                const badgeColorsList = formData.getAll(`fields[${index}][table][badgeColors][colors][]`);
-                badgeValues.forEach((value, i) => {
-                    if (value) field.table.badgeColors[value] = badgeColorsList[i];
-                });
+                // Parse badge mappings (combined color and text)
+                const badgeMappingValues = formData.getAll(`fields[${index}][table][badgeMappings][values][]`);
+                const badgeMappingColors = formData.getAll(`fields[${index}][table][badgeMappings][colors][]`);
+                const badgeMappingTexts = formData.getAll(`fields[${index}][table][badgeMappings][texts][]`);
                 
-                // Parse badge texts
-                const badgeTextValues = formData.getAll(`fields[${index}][table][badgeTexts][values][]`);
-                const badgeTextLabels = formData.getAll(`fields[${index}][table][badgeTexts][texts][]`);
-                badgeTextValues.forEach((value, i) => {
-                    if (value && badgeTextLabels[i]) field.table.badgeTexts[value] = badgeTextLabels[i];
+                badgeMappingValues.forEach((value, i) => {
+                    if (value) {
+                        field.table.badgeColors[value] = badgeMappingColors[i];
+                        if (badgeMappingTexts[i]) {
+                            field.table.badgeTexts[value] = badgeMappingTexts[i];
+                        }
+                    }
                 });
                 
                 data.fields.push(field);
