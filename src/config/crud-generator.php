@@ -6,6 +6,18 @@ return [
     | CRUD Generator Configuration
     |--------------------------------------------------------------------------
     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Allowed Environments
+    |--------------------------------------------------------------------------
+    |
+    | The CRUD generator (both web UI and Artisan command) will only run
+    | in these environments. By default, only 'local' is allowed.
+    | Add more environments (e.g., 'staging', 'testing') as needed.
+    |
+    */
+    'allowed_environments' => ['local'],
     
     'route_prefix' => 'crud-generator',
     
@@ -18,6 +30,9 @@ return [
         'requests' => 'App/Http/Requests',
         'views' => 'resources/views',
         'routes' => 'routes/web.php',
+        'api_controllers' => 'App/Http/Controllers/Api',
+        'api_resources' => 'App/Http/Resources',
+        'api_routes' => 'routes/api.php',
     ],
     
     // Default namespace
@@ -25,6 +40,8 @@ return [
         'models' => 'App\\Models',
         'controllers' => 'App\\Http\\Controllers',
         'requests' => 'App\\Http\\Requests',
+        'api_controllers' => 'App\\Http\\Controllers\\Api',
+        'api_resources' => 'App\\Http\\Resources',
     ],
     
     // Field types available in the generator

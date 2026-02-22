@@ -37,6 +37,7 @@ class CrudGeneratorController extends Controller
             'layout' => 'nullable|string',
             'with_migration' => 'nullable|boolean',
             'with_seeder' => 'nullable|boolean',
+            'api_mode' => 'nullable|boolean',
         ]);
 
         try {
@@ -47,6 +48,7 @@ class CrudGeneratorController extends Controller
                 'layout' => $request->layout,
                 'with_migration' => $request->boolean('with_migration', true),
                 'with_seeder' => $request->boolean('with_seeder', false),
+                'api_mode' => $request->boolean('api_mode', false),
             ]);
 
             return response()->json([
@@ -128,7 +130,6 @@ class CrudGeneratorController extends Controller
                     return DB::select("SHOW TABLES");
             }
         } catch (\Exception $e) {
-            // Return empty array if all methods fail
             return [];
         }
     }

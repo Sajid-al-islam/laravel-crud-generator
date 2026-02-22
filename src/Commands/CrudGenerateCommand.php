@@ -17,7 +17,8 @@ class CrudGenerateCommand extends Command
                             {--table= : The name of the table}
                             {--fields= : Fields in JSON format}
                             {--no-migration : Skip migration generation}
-                            {--with-seeder : Generate seeder}';
+                            {--with-seeder : Generate seeder}
+                            {--api : Generate API-only CRUD (no views, JSON responses)}';
 
     /**
      * The console command description.
@@ -39,6 +40,17 @@ class CrudGenerateCommand extends Command
      */
     public function handle()
     {
+        // Environment guard
+        $allowedEnvironments = config('crud-generator.allowed_environments', ['local']);
+
+        if (!app()->environment($allowedEnvironments)) {
+            $this->error('CRUD Generator is not available in the "' . app()->environment() . '" environment.');
+            $this->line('Allowed environments: ' . implode(', ', $allowedEnvironments));
+            $this->line('You can change this in config/crud-generator.php under "allowed_environments".');
+
+            return 1;
+        }
+
         $modelName = $this->argument('model');
         $tableName = $this->option('table') ?: strtolower($modelName) . 's';
         
@@ -59,6 +71,7 @@ class CrudGenerateCommand extends Command
                 'fields' => $fields,
                 'with_migration' => !$this->option('no-migration'),
                 'with_seeder' => $this->option('with-seeder'),
+                'api_mode' => $this->option('api'),
             ]);
 
             $this->info('CRUD generated successfully!');

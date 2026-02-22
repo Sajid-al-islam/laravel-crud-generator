@@ -1,6 +1,6 @@
 # Laravel CRUD Generator
 
-A Laravel package that lets you scaffold complete CRUD (Create, Read, Update, Delete) functionality—with models, migrations, controllers, requests, views, and routes—through a simple web-based UI or programmatically.
+A Laravel package that lets you scaffold complete CRUD (Create, Read, Update, Delete) functionality—with models, migrations, controllers, requests, views, and routes—through a simple web-based UI or programmatically. Supports both **monolithic** (Blade views) and **API-only** (JSON Resources) generation.
 
 ## Features
 
@@ -21,6 +21,9 @@ A Laravel package that lets you scaffold complete CRUD (Create, Read, Update, De
 
 - **Automatic Route Registration**  
   Appends a `Route::resource(...)` declaration to `routes/web.php`, enabling immediate access to your new CRUD endpoints.
+
+- **API-Only Mode**  
+  Generate API controllers (in `App/Http/Controllers/Api/`), Eloquent API Resources, Resource Collections, and `Route::apiResource(...)` routes in `routes/api.php`—no Blade views generated.
 
 - **Web UI for Configuration**  
   A Bootstrap- and Font Awesome-powered interface where you can:
@@ -43,7 +46,9 @@ A Laravel package that lets you scaffold complete CRUD (Create, Read, Update, De
   - `app/Models/` (for models)  
   - `database/migrations/` (for migrations)  
   - `app/Http/Controllers/` (for controllers)  
+  - `app/Http/Controllers/Api/` (for API controllers)  
   - `app/Http/Requests/` (for form requests)  
+  - `app/Http/Resources/` (for API resources)  
   - `resources/views/` (for views)  
 
 ---
@@ -164,6 +169,7 @@ php artisan crud:generate Book
 - `--fields=` - Fields in JSON format (optional)
 - `--no-migration` - Skip migration generation
 - `--with-seeder` - Generate seeder
+- `--api` - Generate API-only CRUD (no views, JSON responses)
 
 #### Examples
 
@@ -224,6 +230,20 @@ php artisan crud:generate Category --no-migration
 php artisan crud:generate User --with-seeder
 ```
 
+**6. API-Only Mode**
+```bash
+php artisan crud:generate Post --api --fields='[
+    {"name": "title", "type": "string", "validation": "required|string|max:255"},
+    {"name": "body", "type": "text", "validation": "required|string"}
+]'
+```
+This generates:
+- `app/Http/Controllers/Api/PostController.php` (returns JSON via API Resources)
+- `app/Http/Resources/PostResource.php`
+- `app/Http/Resources/PostCollection.php`
+- `Route::apiResource('posts', ...)` in `routes/api.php`
+- Model, migration, and form request (as normal)
+
 #### Programmatic Usage
 
 You can also call the `CrudGeneratorService` directly from within your own Artisan commands or controllers:
@@ -251,6 +271,23 @@ $service = app(CrudGeneratorService::class);
 $generated = $service->generateCrud($data);
 
 // $generated is an array of created file paths and the appended route
+```
+
+**API-Only via Service:**
+```php
+$data = [
+    'model_name'     => 'Book',
+    'table_name'     => 'books',
+    'with_migration' => true,
+    'with_seeder'    => false,
+    'api_mode'       => true,   // Enable API-only generation
+    'fields' => [
+        ['name' => 'title', 'type' => 'string', 'validation' => 'required'],
+    ],
+];
+
+$generated = app(CrudGeneratorService::class)->generateCrud($data);
+// Returns: model, migration, request, controller (Api/), resource, resource_collection, routes
 ```
 
 ---

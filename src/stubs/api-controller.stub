@@ -1,0 +1,88 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Requests\{{requestName}};
+use App\Http\Resources\{{ModelName}}Resource;
+use App\Http\Resources\{{ModelName}}Collection;
+use App\Models\{{ModelName}};
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+
+class {{ModelName}}Controller extends Controller
+{
+    /**
+     * Display a paginated listing of the resource.
+     */
+    public function index(Request $request)
+    {
+        $query = {{ModelName}}::query();
+
+        // Search functionality
+        $searchableFields = [{{searchableFieldsArray}}];
+
+        if ($request->filled('search') && !empty($searchableFields)) {
+            $searchTerm = $request->search;
+
+            $query->where(function ($q) use ($searchTerm, $searchableFields) {
+                foreach ($searchableFields as $field) {
+                    $q->orWhere($field, 'like', "%{$searchTerm}%");
+                }
+            });
+        }
+
+        // Sorting functionality
+        $sortableFields = [{{sortableFieldsArray}}];
+        if ($request->filled('sort') && in_array($request->sort, $sortableFields)) {
+            $direction = $request->get('direction', 'asc');
+            $direction = in_array($direction, ['asc', 'desc']) ? $direction : 'asc';
+            $query->orderBy($request->sort, $direction);
+        } else {
+            $query->latest();
+        }
+
+        // Pagination with per-page selection
+        $perPage = $request->get('per_page', 15);
+        $perPage = in_array((int) $perPage, [10, 15, 25, 50, 100]) ? (int) $perPage : 15;
+
+        return new {{ModelName}}Collection($query->paginate($perPage));
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store({{requestName}} $request)
+    {
+        ${{modelVariable}} = {{ModelName}}::create($request->validated());
+
+        return new {{ModelName}}Resource(${{modelVariable}});
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show({{ModelName}} ${{modelVariable}})
+    {
+        return new {{ModelName}}Resource(${{modelVariable}});
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update({{requestName}} $request, {{ModelName}} ${{modelVariable}})
+    {
+        ${{modelVariable}}->update($request->validated());
+
+        return new {{ModelName}}Resource(${{modelVariable}});
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy({{ModelName}} ${{modelVariable}})
+    {
+        ${{modelVariable}}->delete();
+
+        return response()->json(null, Response::HTTP_NO_CONTENT);
+    }
+}

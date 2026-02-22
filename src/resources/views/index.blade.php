@@ -109,7 +109,23 @@
                     <!-- Generation Options -->
                     <div class="mb-6">
                         <h3 class="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Generation Options</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        
+                        <!-- API Mode Toggle -->
+                        <div class="mb-4 p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="api_mode" name="api_mode" 
+                                    onchange="toggleApiMode()"
+                                    class="w-5 h-5 text-indigo-600 border-indigo-300 rounded focus:ring-2 focus:ring-indigo-500">
+                                <span class="ml-3 text-sm font-semibold text-indigo-900">
+                                    <i class="fas fa-plug mr-1"></i>API Only Mode
+                                </span>
+                                <span class="ml-2 text-xs text-indigo-600">
+                                    Generates API controller, resources &amp; api routes
+                                </span>
+                            </label>
+                        </div>
+
+                        <div id="layout-options" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div class="space-y-2">
                                 <label for="layout" class="text-sm font-medium text-foreground">Layout</label>
                                 <input type="text" 
@@ -243,6 +259,8 @@
         function addField(name = '', type = 'string', validation = '') {
             fieldCounter++;
             const container = document.getElementById('fields-container');
+            const isApiMode = document.getElementById('api_mode')?.checked || false;
+            const visSectionStyle = isApiMode ? 'display:none' : '';
             
             const fieldHtml = `
                 <div class="field-card bg-muted/50 rounded-lg border border-border p-5 hover:border-primary/50 transition-all" id="field-${fieldCounter}">
@@ -303,7 +321,7 @@
                         </div>
 
                         <!-- Visibility Controls -->
-                        <div class="space-y-2">
+                        <div class="visibility-section space-y-2" style="${visSectionStyle}">
                             <label class="text-sm font-medium text-foreground">Show field in:</label>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                                 <label class="flex items-center justify-center space-x-2 p-3 border border-input rounded-md cursor-pointer hover:bg-accent transition-colors has-[:checked]:bg-blue-50 has-[:checked]:border-primary">
@@ -346,7 +364,7 @@
                         </div>
 
                         <!-- Table Configuration -->
-                        <div class="space-y-2">
+                        <div class="visibility-section space-y-2" style="${visSectionStyle}">
                             <label class="text-sm font-medium text-foreground">Table Column Options:</label>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <label class="inline-flex items-center cursor-pointer">
@@ -382,7 +400,7 @@
                         </div>
 
                         <!-- Badge Mapping -->
-                        <div id="badge-colors-${fieldCounter}" class="space-y-2 hidden">
+                        <div id="badge-colors-${fieldCounter}" class="visibility-section space-y-2 hidden" style="${visSectionStyle}">
                             <label class="text-sm font-medium text-foreground">Badge Mapping (value → color + text)</label>
                             <p class="text-xs text-muted-foreground mb-2">Map values to badge colors and display text</p>
                             <div id="badge-mappings-${fieldCounter}" class="space-y-2"></div>
@@ -514,6 +532,7 @@
                 layout: formData.get('layout') || 'layouts.app',
                 with_migration: document.getElementById('with_migration').checked,
                 with_seeder: document.getElementById('with_seeder').checked,
+                api_mode: document.getElementById('api_mode').checked,
                 fields: []
             };
             
@@ -673,6 +692,21 @@
                     addField(field.name, field.type, field.validation);
                 });
             }
+        }
+
+        // Toggle API mode UI
+        function toggleApiMode() {
+            const isApi = document.getElementById('api_mode').checked;
+            const layoutOptions = document.getElementById('layout-options');
+            const visibilitySections = document.querySelectorAll('.visibility-section');
+
+            // Hide/show layout selector
+            layoutOptions.style.display = isApi ? 'none' : '';
+
+            // Hide/show visibility controls on existing fields
+            visibilitySections.forEach(el => {
+                el.style.display = isApi ? 'none' : '';
+            });
         }
     </script>
 </body>

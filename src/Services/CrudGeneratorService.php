@@ -33,6 +33,7 @@ class CrudGeneratorService
         $modelName = $data['model_name'];
         $tableName = $data['table_name'];
         $fields = $data['fields'];
+        $apiMode = $data['api_mode'] ?? false;
 
         $generatedFiles = [];
 
@@ -42,15 +43,19 @@ class CrudGeneratorService
             $generatedFiles['migration'] = $this->generateMigration($tableName, $fields);
         }
 
-        $layout = $data['layout'] ?? 'layouts.app';
-
-        $generatedFiles['controller'] = $this->generateController($modelName, $fields, $layout);
-
         $generatedFiles['request'] = $this->generateRequest($modelName, $fields);
 
-        $generatedFiles['views'] = $this->generateViews($modelName, $fields, $layout);
-
-        $generatedFiles['routes'] = $this->addRoutes($modelName);
+        if ($apiMode) {
+            $generatedFiles['controller'] = $this->generateApiController($modelName, $fields);
+            $generatedFiles['resource'] = $this->generateApiResource($modelName, $fields);
+            $generatedFiles['resource_collection'] = $this->generateApiResourceCollection($modelName);
+            $generatedFiles['routes'] = $this->addApiRoutes($modelName);
+        } else {
+            $layout = $data['layout'] ?? 'layouts.app';
+            $generatedFiles['controller'] = $this->generateController($modelName, $fields, $layout);
+            $generatedFiles['views'] = $this->generateViews($modelName, $fields, $layout);
+            $generatedFiles['routes'] = $this->addRoutes($modelName);
+        }
 
         return $generatedFiles;
     }
@@ -598,6 +603,192 @@ class CrudGeneratorService
             // Copy default layout stub
             $stub = File::get($this->getStubPath('layout.stub'));
             File::put($viewPath, $stub);
+        }
+    }
+
+    // =========================================================================
+    // API Generation Methods
+    // =========================================================================
+
+    /**
+     * Generate an API controller that returns JSON via API Resources.
+     */
+    protected function generateApiController($modelName, $fields)
+    {
+        $stub = File::get($this->stubPath . 'api-controller.stub');
+
+        $modelVariable = Str::camel($modelName);
+        $modelPluralVariable = Str::camel(Str::plural($modelName));
+
+        $searchableFields = $this->getSearchableFields($fields);
+        $sortableFields = $this->getSortableFields($fields);
+        $searchableFieldsArray = $this->getFieldsAsArray($searchableFields);
+        $sortableFieldsArray = $this->getFieldsAsArray($sortableFields);
+
+        $replacements = [
+            '{{ModelName}}' => $modelName,
+            '{{modelVariable}}' => $modelVariable,
+            '{{modelPluralVariable}}' => $modelPluralVariable,
+            '{{requestName}}' => $modelName . 'Request',
+            '{{searchableFieldsArray}}' => $searchableFieldsArray,
+            '{{sortableFieldsArray}}' => $sortableFieldsArray,
+        ];
+
+        $content = str_replace(array_keys($replacements), array_values($replacements), $stub);
+
+        $directory = app_path('Http/Controllers/Api');
+        if (!File::isDirectory($directory)) {
+            File::makeDirectory($directory, 0755, true);
+        }
+
+        // Ensure the base controller exists in the Api namespace
+        $this->ensureApiBaseControllerExists();
+
+        $path = $directory . "/{$modelName}Controller.php";
+        File::put($path, $content);
+
+        return $path;
+    }
+
+    /**
+     * Generate an API Resource for a single model instance.
+     */
+    protected function generateApiResource($modelName, $fields)
+    {
+        $stub = File::get($this->stubPath . 'api-resource.stub');
+
+        $resourceFields = $this->generateResourceFields($fields);
+
+        $replacements = [
+            '{{ModelName}}' => $modelName,
+            '{{resourceFields}}' => $resourceFields,
+        ];
+
+        $content = str_replace(array_keys($replacements), array_values($replacements), $stub);
+
+        $directory = app_path('Http/Resources');
+        if (!File::isDirectory($directory)) {
+            File::makeDirectory($directory, 0755, true);
+        }
+
+        $path = $directory . "/{$modelName}Resource.php";
+        File::put($path, $content);
+
+        return $path;
+    }
+
+    /**
+     * Generate an API Resource Collection for paginated results.
+     */
+    protected function generateApiResourceCollection($modelName)
+    {
+        $stub = File::get($this->stubPath . 'api-resource-collection.stub');
+
+        $replacements = [
+            '{{ModelName}}' => $modelName,
+        ];
+
+        $content = str_replace(array_keys($replacements), array_values($replacements), $stub);
+
+        $directory = app_path('Http/Resources');
+        if (!File::isDirectory($directory)) {
+            File::makeDirectory($directory, 0755, true);
+        }
+
+        $path = $directory . "/{$modelName}Collection.php";
+        File::put($path, $content);
+
+        return $path;
+    }
+
+    /**
+     * Generate resource field mappings for the API Resource toArray method.
+     */
+    protected function generateResourceFields($fields)
+    {
+        $lines = '';
+        foreach ($fields as $field) {
+            $lines .= "            '{$field['name']}' => \$this->{$field['name']},\n";
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Add API routes to routes/api.php for the generated model.
+     */
+    protected function addApiRoutes($modelName)
+    {
+        $routeName = Str::lower(Str::plural($modelName));
+        $controllerName = $modelName . 'Controller';
+
+        $fqcn = "App\\Http\\Controllers\\Api\\{$controllerName}";
+        $useStatement = "use {$fqcn};";
+
+        $routeLine = "Route::apiResource('{$routeName}', {$controllerName}::class);";
+
+        $routesPath = base_path('routes/api.php');
+
+        // Create routes/api.php if it doesn't exist (Laravel 11+ may not have it by default)
+        if (!File::exists($routesPath)) {
+            File::put($routesPath, "<?php\n\nuse Illuminate\\Support\\Facades\\Route;\n\n");
+        }
+
+        $routesContent = File::get($routesPath);
+
+        // Insert the use statement if not already present
+        if (strpos($routesContent, $useStatement) === false) {
+            if (preg_match('/\A(<\?php\s*)(.*?)use\s+Illuminate\\\\Support\\\\Facades\\\\Route;/s', $routesContent, $matches)) {
+                $insertPosition = strpos($routesContent, $matches[0]) + strlen($matches[0]);
+                $insertion = "\n{$useStatement}\n";
+                $routesContent = substr_replace($routesContent, $insertion, $insertPosition, 0);
+            } else {
+                if (preg_match('/\A(<\?php\s*)/s', $routesContent, $m)) {
+                    $insertPosition = strlen($m[1]);
+                    $insertion = "\n{$useStatement}\n";
+                    $routesContent = substr_replace($routesContent, $insertion, $insertPosition, 0);
+                } else {
+                    $routesContent = "<?php\n{$useStatement}\n" . ltrim($routesContent);
+                }
+            }
+
+            File::put($routesPath, $routesContent);
+        }
+
+        // Re-read and append route line if not present
+        $routesContent = File::get($routesPath);
+
+        if (strpos($routesContent, $routeLine) === false) {
+            File::append($routesPath, "\n" . $routeLine . "\n");
+        }
+
+        return $routeLine;
+    }
+
+    /**
+     * Ensure an Api base controller exists so generated controllers can extend it.
+     */
+    protected function ensureApiBaseControllerExists()
+    {
+        $path = app_path('Http/Controllers/Api/Controller.php');
+
+        if (!File::exists($path)) {
+            $content = <<<'PHP'
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Foundation\Validation\ValidatesRequests;
+
+class Controller extends BaseController
+{
+    use AuthorizesRequests, ValidatesRequests;
+}
+PHP;
+
+            File::put($path, $content);
         }
     }
 }

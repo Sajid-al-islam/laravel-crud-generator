@@ -2,10 +2,14 @@
 
 use Illuminate\Support\Facades\Route;
 use SajidUlIslam\CrudGenerator\Http\Controllers\CrudGeneratorController;
+use SajidUlIslam\CrudGenerator\Http\Middleware\EnsureAllowedEnvironment;
 
 Route::group([
     'prefix' => config('crud-generator.route_prefix', 'crud-generator'),
-    'middleware' => config('crud-generator.middleware', ['web']),
+    'middleware' => array_merge(
+        config('crud-generator.middleware', ['web']),
+        [EnsureAllowedEnvironment::class]
+    ),
 ], function () {
     
     Route::get('/', [CrudGeneratorController::class, 'index'])->name('crud-generator.index');
