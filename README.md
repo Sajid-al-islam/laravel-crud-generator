@@ -1,368 +1,174 @@
-# Laravel CRUD Generator
+# Laravel CRUD Generator v3
 
-A Laravel package that lets you scaffold complete CRUD (Create, Read, Update, Delete) functionality—with models, migrations, controllers, requests, views, and routes—through a simple web-based UI or programmatically. Supports both **monolithic** (Blade views) and **API-only** (JSON Resources) generation.
+Generate complete CRUD operations for **any Laravel stack** — Blade, API, React, Vue, Svelte, Livewire, Nova, or Filament — from a single artisan command or a slick web UI.
+
+```
+$ php artisan make:crud posts --stack=react --service
+
+✔ app/Models/Post.php
+✔ app/Http/Controllers/PostController.php
+✔ app/Http/Requests/StorePostRequest.php
+✔ app/Http/Requests/UpdatePostRequest.php
+✔ app/Services/PostService.php
+✔ resources/js/pages/Posts/Index.tsx
+✔ resources/js/pages/Posts/Create.tsx
+✔ resources/js/pages/Posts/Edit.tsx
+✔ resources/js/pages/Posts/Show.tsx
+✔ resources/js/types/post.ts
+~ routes/web.php  (appended)
+
+Generated 10 files in 0.3s
+```
 
 ## Features
 
-- **Model Generation**  
-  Creates an Eloquent model class with fillable properties.
-
-- **Optional Migration Creation**  
-  Generates a timestamped migration file with columns based on your field definitions (string, text, integer, boolean, date, datetime, etc.), including `nullable` support.
-
-- **Controller Generation**  
-  Builds a resource controller with index, create, store, edit, update, show, and destroy methods.
-
-- **Form Request Generation**  
-  Generates a dedicated FormRequest class for server-side validation of your model's fields.
-
-- **Blade View Scaffolding**  
-  Produces a complete set of Blade templates (`index`, `create`, `edit`, `show`) under `resources/views/{resource}`—including dynamic form inputs, tables, and detail pages.
-
-- **Automatic Route Registration**  
-  Appends a `Route::resource(...)` declaration to `routes/web.php`, enabling immediate access to your new CRUD endpoints.
-
-- **API-Only Mode**  
-  Generate API controllers (in `App/Http/Controllers/Api/`), Eloquent API Resources, Resource Collections, and `Route::apiResource(...)` routes in `routes/api.php`—no Blade views generated.
-
-- **Web UI for Configuration**  
-  A Bootstrap- and Font Awesome-powered interface where you can:
-  - Enter Model Name (PascalCase) and Table Name (snake_case, plural).
-  - Choose whether to generate a migration/seeder.
-  - Define fields (name, type, validation rules, nullable).
-  - Dynamically add/remove fields.
-  - Load quick field templates (Blog Post, Product, User).
-
-- **Programmatic (CLI) Usage**  
-  Inject `CrudGeneratorService` into your own Artisan commands to generate CRUD definitions from an array of parameters.  
-
-
-## Requirements
-
-- PHP 8.0+  
-- Laravel 9.x+  
-- Composer  
-- Writable directories:  
-  - `app/Models/` (for models)  
-  - `database/migrations/` (for migrations)  
-  - `app/Http/Controllers/` (for controllers)  
-  - `app/Http/Controllers/Api/` (for API controllers)  
-  - `app/Http/Requests/` (for form requests)  
-  - `app/Http/Resources/` (for API resources)  
-  - `resources/views/` (for views)  
-
----
+- **8 first-party stacks**: Blade, API, React (Inertia + shadcn/ui), Vue (Inertia + shadcn-vue), Svelte (Inertia + shadcn-svelte), Livewire (Flux UI), Nova, Filament v3
+- **Pluggable driver architecture** — every stack is its own class implementing `GeneratorDriver`
+- **Service layer** — generate `PostService` to extract business logic from controllers
+- **Repository layer** — generate `PostRepository` + `PostRepositoryInterface` (requires service)
+- **Custom stubs** — bring your own `.stub` files, drop a `crud-generator.json` config
+- **Interactive CLI** — `php artisan make:crud` launches a `laravel/prompts` wizard
+- **Modern landing page** — beautiful dark-theme marketing page at `/`
+- **Syntactically valid output** — every generated file parses
+- **Fail-gracefully** — detects missing dependencies (Nova, Filament) with clear errors
 
 ## Installation
 
-1. **Require the Package**  
-   ```bash
-   composer require sajidul-islam/laravel-crud-generator
-   ```
-
-2. **Publish Assets (Optional)**  
-   The package allows you to publish different assets for customization:
-
-   **Publish Everything:**
-   ```bash
-   php artisan vendor:publish --provider="SajidUlIslam\CrudGenerator\CrudGeneratorServiceProvider"
-   ```
-   
-   **Or publish specific assets using tags:**
-
-   **Stubs (Templates for Generated Code):**
-   ```bash
-   php artisan vendor:publish --tag=crud-generator-stubs
-   ```
-   This copies stub files to `resources/stubs/vendor/crud-generator/`. Customize these to change how your models, controllers, views, etc. are generated.
-
-   **Configuration File:**
-   ```bash
-   php artisan vendor:publish --tag=crud-generator-config
-   ```
-   This creates `config/crud-generator.php` where you can customize paths, namespaces, and field types.
-
-   **Views (Web UI Interface):**
-   ```bash
-   php artisan vendor:publish --tag=crud-generator-views
-   ```
-   This publishes the generator's web interface to `resources/views/vendor/crud-generator/`.
-
-   **Routes:**
-   ```bash
-   php artisan vendor:publish --tag=crud-generator-routes
-   ```
-   This publishes the package routes to `routes/crud-generator.php` for customization.
-
-3. **(Optional) Migrate Your Database**
-
-   ```bash
-   php artisan migrate
-   ```
-
-   Ensure your existing migrations are up-to-date before generating new tables.
-
----
-
-## Configuration
-
-To customize the package behavior, publish the configuration file:
-
 ```bash
-php artisan vendor:publish --tag=crud-generator-config
+composer require sajidul-islam/laravel-crud-generator --dev
+php artisan vendor:publish --tag=crud-generator
 ```
-
-This creates `config/crud-generator.php` where you can configure:
-
-* **Route Prefix** - URL prefix for the web UI (default: `crud-generator`)
-* **Middleware** - Middleware applied to the web UI routes
-* **Paths** - Custom paths for generated files (models, controllers, views, etc.)
-* **Namespaces** - Custom namespaces for generated classes  
-* **Field Types** - Available field types in the UI dropdown
-
-If you don't publish the config, the package uses sensible defaults out-of-the-box.
-
----
 
 ## Usage
 
+### Interactive wizard
+
+```bash
+php artisan make:crud
+```
+
+You'll be prompted for the table name, stack, service layer, and fields.
+
+### Non-interactive
+
+```bash
+php artisan make:crud posts --stack=react --service --force
+```
+
+### Available options
+
+| Option | Description |
+| --- | --- |
+| `--stack=` | `blade`, `api`, `react`, `vue`, `svelte`, `livewire`, `nova`, `filament` |
+| `--service` | Generate a `PostService` class |
+| `--repository` | Generate repository (implies `--service`) |
+| `--no-migration` | Skip migration generation |
+| `--no-model` | Skip model generation |
+| `--no-requests` | Skip form request generation |
+| `--no-routes` | Skip route registration |
+| `--custom-stubs=` | Path to a custom stubs directory |
+| `--force` | Overwrite existing files |
+| `--dry-run` | Show what would be generated without writing files |
+| `--fields=` | JSON-encoded field definitions |
+
+### Other commands
+
+```bash
+# Publish stubs to your project for customization
+php artisan crud:publish-stubs --stack=react
+
+# Import a crud-generator.json config
+php artisan crud:import-config ./my-config.json
+
+# Validate that stubs contain all required variables
+php artisan crud:validate-stubs --stack=react
+```
+
 ### Web UI
 
-![crud-generator](https://github.com/user-attachments/assets/bd781b3c-db78-43e2-936a-d16809607ba0)
+Visit `/crud-generator` in your browser. (Local environment only by default.)
 
-1. **Access the Generator**  
-   Open your browser and navigate to `/crud-generator`. If your application uses a custom prefix (e.g., `admin`), adjust the URL accordingly.
+Visit `/` for the landing page.
 
-2. **Fill Out the Form**
+## Customization
 
-   * **Model Name (PascalCase)** (e.g., `Post`)
-   * **Table Name (snake_case, plural)** (e.g., `posts`—auto-filled from Model Name)
-   * **Generate Migration** (checkbox)
-   * **Generate Seeder** (checkbox)
-   * **Fields**
+### `crud-generator.json`
 
-     * **Field Name** (snake_case, no spaces)
-     * **Type** (string, text, integer, boolean, date, datetime, email, password)
-     * **Validation Rules** (Laravel validation syntax, e.g., `required|string|max:255`)
-     * **Nullable** (checkbox)
-   * **Quick Templates**
+Drop a `crud-generator.json` in your project root to control imports, component library, etc:
 
-     * Click a template button (e.g., "Blog Post", "Product", "User") to load predefined fields.
-
-3. **Generate CRUD**  
-   Click the "Generate CRUD" button. The package will scaffold files and append routes. A "Results" panel will list every created/modified file and next steps (e.g., run `php artisan migrate`).
-
-### CLI/Artisan Command
-
-The package provides an Artisan command to generate CRUD operations directly from the command line:
-
-#### Basic Usage
-
-```bash
-php artisan crud:generate Book
+```json
+{
+    "stack": "react",
+    "customStubsPath": "./crud-stubs",
+    "componentLibrary": "shadcn/ui",
+    "imports": {
+        "Button":   "@/components/ui/button",
+        "Input":    "@/components/ui/input",
+        "Table":    "@/components/ui/table",
+        "Select":   "@/components/ui/select",
+        "Textarea": "@/components/ui/textarea"
+    },
+    "wrappers": {
+        "form": "AppLayout",
+        "table": "AppLayout"
+    },
+    "pagePrefix": "Admin/"
+}
 ```
 
-#### Available Options
+### Custom stubs
 
-- `{model}` - The name of the model (required)
-- `--table=` - The name of the table (optional, defaults to plural of model name)
-- `--fields=` - Fields in JSON format (optional)
-- `--no-migration` - Skip migration generation
-- `--with-seeder` - Generate seeder
-- `--api` - Generate API-only CRUD (no views, JSON responses)
-
-#### Examples
-
-**1. Interactive Mode (Recommended for beginners)**
 ```bash
-php artisan crud:generate Post
+php artisan crud:publish-stubs --stack=react
 ```
-This will prompt you to enter fields interactively.
 
-**2. With JSON Fields**
-```bash
-php artisan crud:generate Book --fields='[
+This copies the React stubs to `crud-stubs/react/` in your project root. Edit them and the generator will use your version.
+
+### Configuration
+
+`config/crud-generator.php` exposes:
+
+- `default_stack` — fall-back stack when none is specified
+- `allowed_environments` — environments where the generator is available
+- `service_layer.pattern` — `suggested` | `required` | `off`
+- `repository.enabled` — global default
+- `stacks.<name>` — custom driver class overrides
+
+## Driver Architecture
+
+Every stack is a class implementing `SajidUlIslam\CrudGenerator\Contracts\GeneratorDriver`. Build your own:
+
+```php
+use SajidUlIslam\CrudGenerator\Contracts\GeneratorDriver;
+use SajidUlIslam\CrudGenerator\CrudDefinition;
+use SajidUlIslam\CrudGenerator\Drivers\AbstractDriver;
+
+class CustomDriver extends AbstractDriver
+{
+    public function getStackName(): string { return 'custom'; }
+    protected function resolveStackKey(): Stack { return Stack::Custom; }
+
+    public function generate(CrudDefinition $definition): array
     {
-        "name": "title",
-        "type": "string",
-        "validation": "required|string|max:255",
-        "nullable": false
-    },
-    {
-        "name": "author",
-        "type": "string", 
-        "validation": "required|string|max:255",
-        "nullable": false
-    },
-    {
-        "name": "published_date",
-        "type": "date",
-        "validation": "nullable|date",
-        "nullable": true
-    },
-    {
-        "name": "summary",
-        "type": "text",
-        "validation": "nullable|string",
-        "nullable": true
-    },
-    {
-        "name": "is_best_seller",
-        "type": "boolean",
-        "validation": "boolean",
-        "nullable": false
+        // ...
     }
-]'
+}
 ```
 
-**3. Custom Table Name**
-```bash
-php artisan crud:generate Product --table=products_catalog
-```
-
-**4. Skip Migration**
-```bash
-php artisan crud:generate Category --no-migration
-```
-
-**5. With Seeder**
-```bash
-php artisan crud:generate User --with-seeder
-```
-
-**6. API-Only Mode**
-```bash
-php artisan crud:generate Post --api --fields='[
-    {"name": "title", "type": "string", "validation": "required|string|max:255"},
-    {"name": "body", "type": "text", "validation": "required|string"}
-]'
-```
-This generates:
-- `app/Http/Controllers/Api/PostController.php` (returns JSON via API Resources)
-- `app/Http/Resources/PostResource.php`
-- `app/Http/Resources/PostCollection.php`
-- `Route::apiResource('posts', ...)` in `routes/api.php`
-- Model, migration, and form request (as normal)
-
-#### Programmatic Usage
-
-You can also call the `CrudGeneratorService` directly from within your own Artisan commands or controllers:
+Register it in `config/crud-generator.php`:
 
 ```php
-use SajidUlIslam\CrudGenerator\Services\CrudGeneratorService;
-
-$data = [
-    'model_name'     => 'Book',
-    'table_name'     => 'books',
-    'with_migration' => true,
-    'with_seeder'    => false,
-    'fields' => [
-        [
-            'name'       => 'title',
-            'type'       => 'string',
-            'validation' => 'required|string|max:255',
-            'nullable'   => false,
-        ],
-        // ... more fields
-    ],
-];
-
-$service = app(CrudGeneratorService::class);
-$generated = $service->generateCrud($data);
-
-// $generated is an array of created file paths and the appended route
+'stacks' => [
+    'custom' => \App\Generators\CustomDriver::class,
+],
 ```
 
-**API-Only via Service:**
-```php
-$data = [
-    'model_name'     => 'Book',
-    'table_name'     => 'books',
-    'with_migration' => true,
-    'with_seeder'    => false,
-    'api_mode'       => true,   // Enable API-only generation
-    'fields' => [
-        ['name' => 'title', 'type' => 'string', 'validation' => 'required'],
-    ],
-];
+## Testing
 
-$generated = app(CrudGeneratorService::class)->generateCrud($data);
-// Returns: model, migration, request, controller (Api/), resource, resource_collection, routes
+```bash
+composer test
 ```
-
----
-
-## Troubleshooting
-
-* **Directory Permissions**  
-  Ensure `app/Models/`, `database/migrations/`, `app/Http/Controllers/`, `app/Http/Requests/`, and `resources/views/` are writable (`chmod -R 755 <directory>`).
-
-* **Route Duplication**  
-  If you regenerate CRUD for the same resource, you may see duplicate `Route::resource(...)` entries. Manually remove the extra line in `routes/web.php`.
-
-* **UI FieldTypes Not Loading**  
-  If the UI's `<select>` elements show empty, verify that your view is receiving a `$fieldTypes` array. In a controller method serving the UI, you should pass something like:
-
-  ```php
-  $fieldTypes = [
-      'string'   => 'String',
-      'text'     => 'Text',
-      'integer'  => 'Integer',
-      'boolean'  => 'Boolean',
-      'date'     => 'Date',
-      'datetime' => 'DateTime',
-      'email'    => 'Email',
-      'password' => 'Password',
-  ];
-
-  return view('vendor.crud-generator.index', compact('fieldTypes'));
-  ```
-
----
-
-## Contributing
-
-1. **Fork the Repo**  
-   Clone your fork:
-
-   ```bash
-   git clone https://github.com/your-username/laravel-crud-generator.git
-   cd laravel-crud-generator
-   ```
-
-2. **Create a New Branch**
-
-   ```bash
-   git checkout -b feature/my-feature
-   ```
-
-3. **Make Changes & Commit**  
-   Use clear, concise commit messages.
-
-4. **Push & Open a PR**
-
-   ```bash
-   git push origin feature/my-feature
-   ```
-
-   Open a pull request against the `main` branch. Include usage examples or tests if you introduce new functionality.
-
----
 
 ## License
 
-This package is released under the [MIT License](LICENSE). Use, modify, and distribute freely.
-
----
-
-## Version
-
-1.0.0
-
-## Acknowledgments
-
-* Inspired by Laravel's scaffolders and community-driven CRUD generators.
-* UI built with [Bootstrap 5](https://getbootstrap.com/) and [Font Awesome](https://fontawesome.com/).
-* Thanks to the Laravel community for ongoing inspiration and best practices.
-
-Happy coding! 🚀
+MIT © Muhammad Sajidul Islam

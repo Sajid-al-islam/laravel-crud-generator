@@ -1,53 +1,71 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SajidUlIslam\CrudGenerator;
 
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
+use SajidUlIslam\CrudGenerator\Commands\ImportConfigCommand;
+use SajidUlIslam\CrudGenerator\Commands\MakeCrudCommand;
+use SajidUlIslam\CrudGenerator\Commands\PublishStubsCommand;
+use SajidUlIslam\CrudGenerator\Commands\ValidateStubsCommand;
+use SajidUlIslam\CrudGenerator\Http\Controllers\CrudGeneratorController;
+use SajidUlIslam\CrudGenerator\Http\Controllers\LandingController;
+use SajidUlIslam\CrudGenerator\Http\Middleware\EnsureAllowedEnvironment;
+use SajidUlIslam\CrudGenerator\Services\ConfigLoader;
+use SajidUlIslam\CrudGenerator\Services\FieldParser;
+use SajidUlIslam\CrudGenerator\Services\FileWriter;
+use SajidUlIslam\CrudGenerator\Services\RelationDetector;
+use SajidUlIslam\CrudGenerator\Services\RouteRegistrar;
+use SajidUlIslam\CrudGenerator\Services\StubManager;
 
 class CrudGeneratorServiceProvider extends ServiceProvider
 {
-    public function register()
+    public function register(): void
     {
-        // Register package services
+        $this->mergeConfigFrom(__DIR__.'/config/crud-generator.php', 'crud-generator');
+
+        $this->app->singleton(Filesystem::class, fn () => new Filesystem);
+
+        $this->app->singleton(StubManager::class);
+        $this->app->singleton(ConfigLoader::class);
+        $this->app->singleton(FieldParser::class);
+        $this->app->singleton(RelationDetector::class);
+        $this->app->singleton(FileWriter::class);
+        $this->app->singleton(RouteRegistrar::class);
     }
 
-    public function boot()
+    public function boot(): void
     {
-        // Load routes
-        $this->loadRoutesFrom(__DIR__ . '/routes/web.php');
-        
-        // Load views
-        $this->loadViewsFrom(__DIR__ . '/resources/views', 'crud-generator');
-        
-        // Load config
-        $this->mergeConfigFrom(__DIR__ . '/config/crud-generator.php', 'crud-generator');
-        
-        // Publishing is only necessary when using the package in a Laravel application
+        $this->loadRoutesFrom(__DIR__.'/routes/web.php');
+        $this->loadViewsFrom(__DIR__.'/resources/views', 'crud-generator');
+
+        $this->publishes([
+            __DIR__.'/config/crud-generator.php' => config_path('crud-generator.php'),
+        ], 'crud-generator-config');
+
+        $this->publishes([
+            __DIR__.'/resources/views' => resource_path('views/vendor/crud-generator'),
+        ], 'crud-generator-views');
+
+        $this->publishes([
+            __DIR__.'/../stubs' => resource_path('stubs/vendor/crud-generator'),
+        ], 'crud-generator-stubs');
+
+        $this->publishes([
+            __DIR__.'/routes/web.php' => base_path('routes/crud-generator.php'),
+        ], 'crud-generator-routes');
+
         if ($this->app->runningInConsole()) {
-            // Publish configuration file
-            $this->publishes([
-                __DIR__ . '/config/crud-generator.php' => config_path('crud-generator.php'),
-            ], ['crud-generator-config', 'crud-generator']);
-            
-            // Publish views
-            $this->publishes([
-                __DIR__ . '/resources/views' => resource_path('views/vendor/crud-generator'),
-            ], ['crud-generator-views', 'crud-generator']);
-            
-            // Publish stubs (most important for customization)
-            $this->publishes([
-                __DIR__ . '/stubs' => resource_path('stubs/vendor/crud-generator'),
-            ], ['crud-generator-stubs', 'crud-generator']);
-            
-            // Publish routes for customization
-            $this->publishes([
-                __DIR__ . '/routes/web.php' => base_path('routes/crud-generator.php'),
-            ], ['crud-generator-routes', 'crud-generator']);
-            
-            // Register commands
             $this->commands([
-                Commands\CrudGenerateCommand::class,
+                MakeCrudCommand::class,
+                PublishStubsCommand::class,
+                ImportConfigCommand::class,
+                ValidateStubsCommand::class,
             ]);
         }
+
+        $this->app['router']->aliasMiddleware('crud-generator.allowed', EnsureAllowedEnvironment::class);
     }
 }
