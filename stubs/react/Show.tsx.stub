@@ -1,0 +1,36 @@
+import { Head, Link } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
+{{ reactImports }}
+
+interface ShowProps {
+    {{ modelVariable }}: {
+        id: number;
+{{ tsInterface }}
+    };
+}
+
+export default function Show({ {{ modelVariable }} }: ShowProps) {
+    return (
+        <AppLayout>
+            <Head title={`{{ modelName }} #${ {{ modelVariable }}.id }`} />
+
+            <div className="p-6 max-w-2xl">
+                <div className="flex items-center justify-between mb-4">
+                    <h1 className="text-2xl font-semibold">{{ modelName }} Details</h1>
+                    <div className="flex gap-2">
+                        <Button asChild variant="outline">
+                            <Link href={`{{ routePrefix }}/${ {{ modelVariable }}.id }/edit`}>Edit</Link>
+                        </Button>
+                        <Button asChild variant="outline">
+                            <Link href="{{ routePrefix }}">Back</Link>
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="rounded-md border divide-y">
+{{ showRows }}
+                </div>
+            </div>
+        </AppLayout>
+    );
+}

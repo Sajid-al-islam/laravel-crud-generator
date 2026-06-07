@@ -1,0 +1,44 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ serviceNamespace }};
+
+use {{ modelNamespace }}\{{ modelName }};
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+{{ repositoryUseStatement }}
+{{ repositoryInterfaceImport }}
+
+class {{ modelName }}Service
+{
+    public function __construct(
+{{ serviceConstructor }}
+    ) {}
+
+    public function paginate(int $perPage = 15): LengthAwarePaginator
+    {
+        return {{ repositoryPaginate }}($perPage);
+    }
+
+    public function findOrFail(int $id): {{ modelName }}
+    {
+        return {{ repositoryFindOrFail }}($id);
+    }
+
+    public function store(array $data): {{ modelName }}
+    {
+        return {{ repositoryCreate }}($data);
+    }
+
+    public function update({{ modelName }} ${{ modelVariable }}, array $data): {{ modelName }}
+    {
+        {{ repositoryUpdate }}(${{ modelVariable }}, $data);
+
+        return ${{ modelVariable }}->fresh();
+    }
+
+    public function destroy({{ modelName }} ${{ modelVariable }}): bool
+    {
+        return {{ repositoryDelete }}(${{ modelVariable }});
+    }
+}

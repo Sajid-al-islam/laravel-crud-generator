@@ -1,0 +1,49 @@
+import { Head, Link, useForm } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
+{{ reactImports }}
+
+interface EditProps {
+    {{ modelVariable }}: {
+        id: number;
+{{ tsInterface }}
+    };
+}
+
+export default function Edit({ {{ modelVariable }} }: EditProps) {
+    const { data, setData, patch, processing, errors } = useForm({
+{{ formInitialValues }}
+    });
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        patch(`{{ routePrefix }}/${ {{ modelVariable }}.id }`);
+    };
+
+    return (
+        <AppLayout>
+            <Head title={`Edit {{ modelName }} #${ {{ modelVariable }}.id }`} />
+
+            <div className="p-6 max-w-2xl">
+                <div className="flex items-center justify-between mb-4">
+                    <h1 className="text-2xl font-semibold">Edit {{ modelName }}</h1>
+                    <Button asChild variant="outline">
+                        <Link href="{{ routePrefix }}">Back</Link>
+                    </Button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+{{ formFields }}
+
+                    <div className="flex justify-end gap-2">
+                        <Button type="button" variant="outline" asChild>
+                            <Link href="{{ routePrefix }}">Cancel</Link>
+                        </Button>
+                        <Button type="submit" disabled={processing}>
+                            Update {{ modelName }}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </AppLayout>
+    );
+}

@@ -1,0 +1,103 @@
+<script setup lang="ts">
+import { Head, Link, router } from '@inertiajs/vue3';
+import AppLayout from '@/layouts/AppLayout.vue';
+{{ vueImports }}
+
+interface {{ modelName }} {
+    id: number;
+{{ tsInterfaceBody }}
+    created_at: string;
+    updated_at: string;
+}
+
+interface {{ modelName }}Paginated {
+    data: {{ modelName }}[];
+    links: { url: string | null; label: string; active: boolean }[];
+    meta: { current_page: number; last_page: number; total: number };
+}
+
+interface Props {
+    {{ modelPluralVariable }}: {{ modelName }}Paginated;
+    filters: { search?: string; sort?: string; direction?: string; per_page?: number };
+}
+
+const props = defineProps<Props>();
+
+const handleDelete = (id: number) => {
+    if (confirm('Are you sure?')) {
+        router.delete(`{{ routePrefix }}/${id}`);
+    }
+};
+
+const handleSearch = (search: string) => {
+    router.get('{{ routePrefix }}', { ...props.filters, search }, { preserveState: true });
+};
+</script>
+
+<template>
+    <Head title="{{ modelPluralVariable }}" />
+
+    <AppLayout>
+        <div class="p-6">
+            <div class="mb-4 flex items-center justify-between">
+                <h1 class="text-2xl font-semibold">{{ modelNamePlural }}</h1>
+                <UiButton as-child>
+                    <Link :href="`{{ routePrefix }}/create`">Create {{ modelName }}</Link>
+                </UiButton>
+            </div>
+
+            <form @submit.prevent="handleSearch(search ?? '')" class="mb-4 flex gap-2">
+                <UiInput v-model="search" placeholder="Search..." />
+                <UiButton type="submit">Search</UiButton>
+            </form>
+
+            <UiTable>
+                <UiTableHeader>
+                    <UiTableRow>
+{{ tableHeaders }}
+                        <UiTableHead>Actions</UiTableHead>
+                    </UiTableRow>
+                </UiTableHeader>
+                <UiTableBody>
+                    <UiTableRow v-if="{{ modelPluralVariable }}.data.length === 0">
+                        <UiTableCell :colspan="100" class="text-center text-muted-foreground py-6">
+                            No {{ modelNameLowerPlural }} found.
+                        </UiTableCell>
+                    </UiTableRow>
+                    <UiTableRow v-for="item in {{ modelPluralVariable }}.data" :key="item.id">
+{{ tableCells }}
+                        <UiTableCell>
+                            <div class="flex gap-2">
+                                <UiButton variant="ghost" size="sm" as-child>
+                                    <Link :href="`{{ routePrefix }}/${item.id}`">View</Link>
+                                </UiButton>
+                                <UiButton variant="outline" size="sm" as-child>
+                                    <Link :href="`{{ routePrefix }}/${item.id}/edit`">Edit</Link>
+                                </UiButton>
+                                <UiButton variant="destructive" size="sm" @click="handleDelete(item.id)">
+                                    Delete
+                                </UiButton>
+                            </div>
+                        </UiTableCell>
+                    </UiTableRow>
+                </UiTableBody>
+            </UiTable>
+
+            <div class="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+                <div>Page {{ metaCurrentPage }} of {{ metaLastPage }}</div>
+                <div class="flex gap-1">
+                    <template v-for="(link, i) in {{ modelPluralVariable }}.links" :key="i">
+                        <UiButton
+                            :variant="link.active ? 'default' : 'outline'"
+                            size="sm"
+                            :disabled="!link.url"
+                            @click="link.url && router.visit(link.url)"
+                        >
+                            <span v-html="link.label" />
+                        </UiButton>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </AppLayout>
+</template>

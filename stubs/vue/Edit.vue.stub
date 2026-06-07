@@ -1,0 +1,48 @@
+<script setup lang="ts">
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import AppLayout from '@/layouts/AppLayout.vue';
+{{ vueImports }}
+
+interface Props {
+    {{ modelVariable }}: {
+        id: number;
+{{ tsInterfaceBody }}
+    };
+}
+
+const props = defineProps<Props>();
+
+const form = useForm({
+{{ formInitialValues }}
+});
+
+const submit = () => {
+    form.patch(`{{ routePrefix }}/${props.{{ modelVariable }}.id}`);
+};
+</script>
+
+<template>
+    <Head :title="`Edit {{ modelName }} #${ {{ modelVariable }}.id }`" />
+
+    <AppLayout>
+        <div class="p-6 max-w-2xl">
+            <div class="mb-4 flex items-center justify-between">
+                <h1 class="text-2xl font-semibold">Edit {{ modelName }}</h1>
+                <UiButton as-child variant="outline">
+                    <Link href="{{ routePrefix }}">Back</Link>
+                </UiButton>
+            </div>
+
+            <form @submit.prevent="submit" class="space-y-4">
+{{ formFields }}
+
+                <div class="flex justify-end gap-2">
+                    <UiButton type="button" variant="outline" as-child>
+                        <Link href="{{ routePrefix }}">Cancel</Link>
+                    </UiButton>
+                    <UiButton type="submit" :disabled="form.processing">Update {{ modelName }}</UiButton>
+                </div>
+            </form>
+        </div>
+    </AppLayout>
+</template>

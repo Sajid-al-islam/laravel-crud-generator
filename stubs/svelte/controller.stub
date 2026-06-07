@@ -1,0 +1,90 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use {{ modelNamespace }}\{{ modelName }};
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+{{ useStatements }}
+
+class {{ modelName }}Controller extends Controller
+{
+{{ controllerProperties }}
+
+    public function index(Request $request): Response
+    {
+        $query = {{ modelName }}::query();
+
+        if ($request->filled('search') && ! empty($this->searchable)) {
+            $term = $request->search;
+            $query->where(function ($q) use ($term) {
+                foreach ($this->searchable as $field) {
+                    $q->orWhere($field, 'like', "%{$term}%");
+                }
+            });
+        }
+
+        if ($request->filled('sort') && in_array($request->sort, $this->sortable, true)) {
+            $direction = $request->get('direction', 'asc') === 'desc' ? 'desc' : 'asc';
+            $query->orderBy($request->sort, $direction);
+        } else {
+            $query->latest();
+        }
+
+        $perPage = (int) $request->get('per_page', 15);
+        $perPage = in_array($perPage, [10, 15, 25, 50, 100], true) ? $perPage : 15;
+
+        ${{ modelPluralVariable }} = $query->paginate($perPage)->withQueryString();
+
+        return Inertia::render('{{ pagePrefix }}{{ modelNamePlural }}/Index', [
+            '{{ modelPluralVariable }}' => ${{ modelPluralVariable }},
+            'filters' => $request->only(['search', 'sort', 'direction', 'per_page']),
+        ]);
+    }
+
+    public function create(): Response
+    {
+        return Inertia::render('{{ pagePrefix }}{{ modelNamePlural }}/Create');
+    }
+
+    public function store(Store{{ modelName }}Request $request)
+    {
+        ${{ serviceStore }};
+
+        return redirect()->route('{{ routePrefix }}.index')
+            ->with('success', '{{ modelName }} created successfully.');
+    }
+
+    public function show({{ modelName }} ${{ modelVariable }}): Response
+    {
+        return Inertia::render('{{ pagePrefix }}{{ modelNamePlural }}/Show', [
+            '{{ modelVariable }}' => ${{ modelVariable }},
+        ]);
+    }
+
+    public function edit({{ modelName }} ${{ modelVariable }}): Response
+    {
+        return Inertia::render('{{ pagePrefix }}{{ modelNamePlural }}/Edit', [
+            '{{ modelVariable }}' => ${{ modelVariable }},
+        ]);
+    }
+
+    public function update(Update{{ modelName }}Request $request, {{ modelName }} ${{ modelVariable }})
+    {
+        ${{ serviceUpdate }};
+
+        return redirect()->route('{{ routePrefix }}.index')
+            ->with('success', '{{ modelName }} updated successfully.');
+    }
+
+    public function destroy({{ modelName }} ${{ modelVariable }})
+    {
+        ${{ serviceDestroy }};
+
+        return redirect()->route('{{ routePrefix }}.index')
+            ->with('success', '{{ modelName }} deleted successfully.');
+    }
+}

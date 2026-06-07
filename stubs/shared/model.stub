@@ -1,0 +1,24 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ modelNamespace }};
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class {{ modelName }} extends Model
+{
+    use HasFactory;
+
+    protected $table = '{{ tableName }}';
+
+    protected $fillable = [
+        {{ fillableFields }}
+    ];
+
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+}

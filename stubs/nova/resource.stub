@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Nova;
+
+use Illuminate\Http\Request;
+use Laravel\Nova\Fields\{{ fieldImports }};
+use Laravel\Nova\Http\Requests\NovaRequest;
+
+class {{ modelName }} extends Resource
+{
+    public static string $model = \App\Models\{{ modelName }}::class;
+
+    public static $title = 'id';
+
+    public static function label(): string
+    {
+        return '{{ modelNamePlural }}';
+    }
+
+    public static $search = [
+{{ novaSearchable }}
+    ];
+
+    /**
+     * @return array<int, \Laravel\Nova\Fields\Field>
+     */
+    public function fields(NovaRequest $request): array
+    {
+        return [
+{{ novaFieldsBody }}
+        ];
+    }
+}

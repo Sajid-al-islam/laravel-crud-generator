@@ -1,0 +1,12 @@
+export interface {{ modelName }} {
+    id: number;
+{{ tsInterfaceBody }}
+    created_at: string;
+    updated_at: string;
+}
+
+export type {{ modelName }}Paginated = {
+    data: {{ modelName }}[];
+    links: { url: string | null; label: string; active: boolean }[];
+    meta: { current_page: number; last_page: number; total: number };
+};

@@ -1,0 +1,119 @@
+import { useState } from 'react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
+{{ reactImports }}
+
+export interface {{ modelName }} {
+{{ tsInterface }}
+}
+
+export type {{ modelName }}Paginated = {
+    data: {{ modelName }}[];
+    links: { url: string | null; label: string; active: boolean }[];
+    meta: { current_page: number; last_page: number; total: number };
+};
+
+interface IndexProps {
+    {{ modelPluralVariable }}: {{ modelName }}Paginated;
+    filters: { search?: string; sort?: string; direction?: string; per_page?: number };
+}
+
+export default function Index({ {{ modelPluralVariable }}, filters }: IndexProps) {
+    const deleteForm = useForm({});
+    const [search, setSearch] = useState(filters.search ?? '');
+
+    const handleDelete = (id: number) => {
+        if (confirm('Are you sure?')) {
+            deleteForm.delete(`{{ routePrefix }}/${id}`);
+        }
+    };
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        router.get('{{ routePrefix }}', { ...filters, search }, { preserveState: true });
+    };
+
+    return (
+        <AppLayout>
+            <Head title="{{ modelNamePlural }}" />
+
+            <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <h1 className="text-2xl font-semibold">{{ modelNamePlural }}</h1>
+                    <Button asChild>
+                        <Link href={`{{ routePrefix }}/create`}>Create {{ modelName }}</Link>
+                    </Button>
+                </div>
+
+                <form onSubmit={handleSearch} className="mb-4 flex gap-2">
+                    <Input
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search..."
+                    />
+                    <Button type="submit">Search</Button>
+                </form>
+
+                <div className="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+{{ tableHeaders }}
+                                <TableHead>Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {{{ modelPluralVariable }}.data.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={100} className="text-center text-muted-foreground py-6">
+                                        No {{ modelNameLowerPlural }} found.
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                {{{ modelPluralVariable }}.data.map((item) => (
+                                    <TableRow key={item.id}>
+{{ tableCells }}
+                                        <TableCell>
+                                            <div className="flex gap-2">
+                                                <Button variant="ghost" size="sm" asChild>
+                                                    <Link href={`{{ routePrefix }}/${item.id}`}>View</Link>
+                                                </Button>
+                                                <Button variant="outline" size="sm" asChild>
+                                                    <Link href={`{{ routePrefix }}/${item.id}/edit`}>Edit</Link>
+                                                </Button>
+                                                <Button variant="destructive" size="sm" onClick={() => handleDelete(item.id)}>
+                                                    Delete
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+
+                <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
+                    <div>
+                        Showing { {{ modelPluralVariable }}.meta.total === 0 ? 0 : (({{ modelPluralVariable }}.meta.current_page - 1) * 15) + 1 }
+                        {' '}to {Math.min({{ modelPluralVariable }}.meta.current_page * 15, {{ modelPluralVariable }}.meta.total)}
+                        {' '}of { {{ modelPluralVariable }}.meta.total } entries
+                    </div>
+                    <div className="flex gap-1">
+                        {{{ modelPluralVariable }}.links.map((link, i) => (
+                            <Button
+                                key={i}
+                                variant={link.active ? 'default' : 'outline'}
+                                size="sm"
+                                disabled={!link.url}
+                                onClick={() => link.url && router.visit(link.url)}
+                            >
+                                <span dangerouslySetInnerHTML={{ __html: link.label }} />
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </AppLayout>
+    );
+}

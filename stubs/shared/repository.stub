@@ -1,0 +1,39 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ repositoryNamespace }};
+
+use {{ modelNamespace }}\{{ modelName }};
+use {{ repositoryContractNamespace }}\{{ modelName }}RepositoryInterface;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+
+class {{ modelName }}Repository implements {{ modelName }}RepositoryInterface
+{
+    public function paginate(int $perPage = 15): LengthAwarePaginator
+    {
+        return {{ modelName }}::latest()->paginate($perPage);
+    }
+
+    public function findOrFail(int $id): {{ modelName }}
+    {
+        return {{ modelName }}::findOrFail($id);
+    }
+
+    public function create(array $data): {{ modelName }}
+    {
+        return {{ modelName }}::create($data);
+    }
+
+    public function update({{ modelName }} ${{ modelVariable }}, array $data): {{ modelName }}
+    {
+        ${{ modelVariable }}->update($data);
+
+        return ${{ modelVariable }}->fresh();
+    }
+
+    public function delete({{ modelName }} ${{ modelVariable }}): bool
+    {
+        return ${{ modelVariable }}->delete();
+    }
+}

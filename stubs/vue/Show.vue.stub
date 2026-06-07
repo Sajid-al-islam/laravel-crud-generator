@@ -1,0 +1,38 @@
+<script setup lang="ts">
+import { Head, Link } from '@inertiajs/vue3';
+import AppLayout from '@/layouts/AppLayout.vue';
+{{ vueImports }}
+
+interface Props {
+    {{ modelVariable }}: {
+        id: number;
+{{ tsInterfaceBody }}
+    };
+}
+
+defineProps<Props>();
+</script>
+
+<template>
+    <Head :title="`{{ modelName }} #${ {{ modelVariable }}?.id }`" />
+
+    <AppLayout>
+        <div class="p-6 max-w-2xl">
+            <div class="mb-4 flex items-center justify-between">
+                <h1 class="text-2xl font-semibold">{{ modelName }} Details</h1>
+                <div class="flex gap-2">
+                    <UiButton as-child variant="outline">
+                        <Link :href="`{{ routePrefix }}/${ {{ modelVariable }}?.id }/edit`">Edit</Link>
+                    </UiButton>
+                    <UiButton as-child variant="outline">
+                        <Link href="{{ routePrefix }}">Back</Link>
+                    </UiButton>
+                </div>
+            </div>
+
+            <div class="rounded-md border divide-y">
+{{ showRows }}
+            </div>
+        </div>
+    </AppLayout>
+</template>

@@ -1,0 +1,35 @@
+<script lang="ts">
+    import { Head, Link } from '@inertiajs/svelte';
+    import AppLayout from '@/layouts/AppLayout.svelte';
+    import { Button } from '@/components/ui/button';
+{{ svelteImports }}
+
+    let { {{ modelVariable }} }: {
+        {{ modelVariable }}: {
+            id: number;
+{{ tsInterfaceBody }}
+        };
+    } = $props();
+</script>
+
+<Head title={`{{ modelName }} #${ {{ modelVariable }}.id }`} />
+
+<AppLayout>
+    <div class="p-6 max-w-2xl">
+        <div class="mb-4 flex items-center justify-between">
+            <h1 class="text-2xl font-semibold">{{ modelName }} Details</h1>
+            <div class="flex gap-2">
+                <Button variant="outline">
+                    <Link href="{{ routePrefix }}/{ {{ modelVariable }}.id }/edit">Edit</Link>
+                </Button>
+                <Button variant="outline">
+                    <Link href="{{ routePrefix }}">Back</Link>
+                </Button>
+            </div>
+        </div>
+
+        <div class="rounded-md border divide-y">
+{{ showRows }}
+        </div>
+    </div>
+</AppLayout>

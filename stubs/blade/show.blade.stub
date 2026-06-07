@@ -1,0 +1,40 @@
+@extends('{{ layout }}')
+
+@section('content')
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">{{ modelName }} Details</h4>
+                    <div>
+                        <a href="{{ route('{{ routePrefix }}.edit', ${{ modelVariable }}) }}" class="btn btn-warning">Edit</a>
+                        <a href="{{ route('{{ routePrefix }}.index') }}" class="btn btn-secondary">Back</a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+{{ showFields }}
+
+                    <div class="row mb-2 mt-4">
+                        <div class="col-md-3"><strong>Created At:</strong></div>
+                        <div class="col-md-9">{{ ${{ modelVariable }}->created_at?->format('Y-m-d H:i:s') }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-3"><strong>Updated At:</strong></div>
+                        <div class="col-md-9">{{ ${{ modelVariable }}->updated_at?->format('Y-m-d H:i:s') }}</div>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <form action="{{ route('{{ routePrefix }}.destroy', ${{ modelVariable }}) }}" method="POST" style="display: inline;">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection

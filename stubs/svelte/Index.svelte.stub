@@ -1,0 +1,111 @@
+<script lang="ts">
+    import { Head, Link, router } from '@inertiajs/svelte';
+    import AppLayout from '@/layouts/AppLayout.svelte';
+    import * as Form from '@/components/ui/form';
+    import { Input } from '@/components/ui/input';
+    import { Textarea } from '@/components/ui/textarea';
+    import { Switch } from '@/components/ui/switch';
+    import { Button } from '@/components/ui/button';
+{{ svelteImports }}
+
+    interface {{ modelName }} {
+        id: number;
+{{ tsInterfaceBody }}
+        created_at: string;
+        updated_at: string;
+    }
+
+    interface {{ modelName }}Paginated {
+        data: {{ modelName }}[];
+        links: { url: string | null; label: string; active: boolean }[];
+        meta: { current_page: number; last_page: number; total: number };
+    }
+
+    let { {{ modelPluralVariable }}, filters }: {
+        {{ modelPluralVariable }}: {{ modelName }}Paginated;
+        filters: { search?: string; sort?: string; direction?: string; per_page?: number };
+    } = $props();
+
+    let search = $state(filters.search ?? '');
+
+    function handleDelete(id: number) {
+        if (confirm('Are you sure?')) {
+            router.delete(`{{ routePrefix }}/${id}`);
+        }
+    }
+
+    function handleSearch(e: SubmitEvent) {
+        e.preventDefault();
+        router.get('{{ routePrefix }}', { ...filters, search }, { preserveState: true });
+    }
+</script>
+
+<Head title="{{ modelNamePlural }}" />
+
+<AppLayout>
+    <div class="p-6">
+        <div class="mb-4 flex items-center justify-between">
+            <h1 class="text-2xl font-semibold">{{ modelNamePlural }}</h1>
+            <Button>
+                <Link href="{{ routePrefix }}/create">Create {{ modelName }}</Link>
+            </Button>
+        </div>
+
+        <form onsubmit={handleSearch} class="mb-4 flex gap-2">
+            <Input bind:value={search} placeholder="Search..." />
+            <Button type="submit">Search</Button>
+        </form>
+
+        <div class="rounded-md border">
+            <table class="w-full">
+                <thead class="bg-muted/50">
+                    <tr>
+{{ tableHeaders }}
+                        <th class="p-2 text-left">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#if {{ modelPluralVariable }}.data.length === 0}
+                        <tr>
+                            <td colspan="100" class="p-6 text-center text-muted-foreground">No {{ modelNameLowerPlural }} found.</td>
+                        </tr>
+                    {/if}
+                    {#each {{ modelPluralVariable }}.data as item (item.id)}
+                        <tr class="border-t">
+{{ tableCells }}
+                            <td class="p-2">
+                                <div class="flex gap-2">
+                                    <Button variant="ghost" size="sm">
+                                        <Link href="{{ routePrefix }}/{item.id}">View</Link>
+                                    </Button>
+                                    <Button variant="outline" size="sm">
+                                        <Link href="{{ routePrefix }}/{item.id}/edit">Edit</Link>
+                                    </Button>
+                                    <Button variant="destructive" size="sm" onclick={() => handleDelete(item.id)}>
+                                        Delete
+                                    </Button>
+                                </div>
+                            </td>
+                        </tr>
+                    {/each}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+            <div>Page { {{ modelPluralVariable }}.meta.current_page } of { {{ modelPluralVariable }}.meta.last_page }</div>
+            <div class="flex gap-1">
+                {#each {{ modelPluralVariable }}.links as link, i}
+                    <Button
+                        variant={link.active ? 'default' : 'outline'}
+                        size="sm"
+                        disabled={!link.url}
+                        onclick={() => link.url && router.visit(link.url)}
+                    >
+                        {@html link.label}
+                    </Button>
+                {/each}
+            </div>
+        </div>
+    </div>
+</AppLayout>

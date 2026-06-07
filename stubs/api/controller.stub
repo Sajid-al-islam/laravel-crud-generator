@@ -1,0 +1,71 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }}\Api;
+
+use {{ namespace }}\Requests\Store{{ modelName }}Request;
+use {{ namespace }}\Requests\Update{{ modelName }}Request;
+use {{ modelNamespace }}\{{ modelName }};
+use {{ resourceNamespace }}\{{ modelName }}Resource;
+use {{ resourceNamespace }}\{{ modelName }}Collection;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+{{ useStatements }}
+
+class {{ modelName }}Controller extends Controller
+{
+{{ controllerProperties }}
+
+    public function index(Request $request)
+    {
+        $query = {{ modelName }}::query();
+
+        if ($request->filled('search') && ! empty($this->searchable)) {
+            $term = $request->search;
+            $query->where(function ($q) use ($term) {
+                foreach ($this->searchable as $field) {
+                    $q->orWhere($field, 'like', "%{$term}%");
+                }
+            });
+        }
+
+        if ($request->filled('sort') && in_array($request->sort, $this->sortable, true)) {
+            $direction = $request->get('direction', 'asc') === 'desc' ? 'desc' : 'asc';
+            $query->orderBy($request->sort, $direction);
+        } else {
+            $query->latest();
+        }
+
+        $perPage = (int) $request->get('per_page', 15);
+        $perPage = in_array($perPage, [10, 15, 25, 50, 100], true) ? $perPage : 15;
+
+        return new {{ modelName }}Collection($query->paginate($perPage));
+    }
+
+    public function store(Store{{ modelName }}Request $request)
+    {
+        ${{ modelVariable }} = {{ serviceStoreLine }};
+
+        return new {{ modelName }}Resource(${{ modelVariable }});
+    }
+
+    public function show({{ modelName }} ${{ modelVariable }})
+    {
+        return new {{ modelName }}Resource(${{ modelVariable }});
+    }
+
+    public function update(Update{{ modelName }}Request $request, {{ modelName }} ${{ modelVariable }})
+    {
+        ${{ serviceUpdateLine }};
+
+        return new {{ modelName }}Resource(${{ modelVariable }});
+    }
+
+    public function destroy({{ modelName }} ${{ modelVariable }})
+    {
+        ${{ serviceDestroyLine }};
+
+        return response()->json(null, Response::HTTP_NO_CONTENT);
+    }
+}

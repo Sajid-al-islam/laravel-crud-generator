@@ -1,0 +1,32 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Livewire\{{ modelNamePlural }};
+
+use App\Models\{{ modelName }};
+use Illuminate\Contracts\View\View;
+use Livewire\Attributes\Validate;
+use Livewire\Component;
+{{ useStatements }}
+
+class Create extends Component
+{
+{{ formProperties }}
+
+    public function save()
+    {
+        $this->validate();
+
+        ${{ serviceStore }};
+
+        session()->flash('success', '{{ modelName }} created successfully.');
+
+        return $this->redirectRoute('{{ routePrefix }}.index');
+    }
+
+    public function render(): View
+    {
+        return view('livewire.{{ routePrefix }}.create');
+    }
+}

@@ -1,0 +1,15 @@
+<div class="p-6 max-w-2xl">
+    <div class="mb-4 flex items-center justify-between">
+        <flux:heading size="xl">Edit {{ modelName }}</flux:heading>
+        <flux:button href="{{ route('{{ routePrefix }}.index') }}" wire:navigate>Back</flux:button>
+    </div>
+
+    <form wire:submit="save" class="space-y-4">
+{{ formFields }}
+
+        <div class="flex justify-end gap-2">
+            <flux:button type="button" href="{{ route('{{ routePrefix }}.index') }}" wire:navigate>Cancel</flux:button>
+            <flux:button type="submit" variant="primary">Update {{ modelName }}</flux:button>
+        </div>
+    </form>
+</div>

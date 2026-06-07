@@ -1,0 +1,40 @@
+<div class="p-6">
+    <div class="mb-4 flex items-center justify-between">
+        <flux:heading size="xl">{{ modelNamePlural }}</flux:heading>
+        <flux:button variant="primary" href="{{ route('{{ routePrefix }}.create') }}" wire:navigate>Create {{ modelName }}</flux:button>
+    </div>
+
+    @if (session('success'))
+        <flux:callout variant="success" class="mb-4">{{ session('success') }}</flux:callout>
+    @endif
+
+    <div class="mb-4">
+        <flux:input wire:model.live.debounce.300ms="search" placeholder="Search..." />
+    </div>
+
+    <flux:table :paginate="$this->{{ modelPluralVariable }}">
+        <flux:columns>
+{{ tableColumns }}
+            <flux:column>Actions</flux:column>
+        </flux:columns>
+
+        <flux:rows>
+            @forelse ($this->{{ modelPluralVariable }} as ${{ modelVariable }})
+                <flux:row>
+{{ tableCells }}
+                    <flux:cell>
+                        <div class="flex gap-2">
+                            <flux:button size="sm" href="{{ route('{{ routePrefix }}.show', ${{ modelVariable }}) }}" wire:navigate>View</flux:button>
+                            <flux:button size="sm" href="{{ route('{{ routePrefix }}.edit', ${{ modelVariable }}) }}" wire:navigate>Edit</flux:button>
+                            <flux:button size="sm" variant="danger" wire:click="delete({{ ${{ modelVariable }}->id }})" wire:confirm="Are you sure?">Delete</flux:button>
+                        </div>
+                    </flux:cell>
+                </flux:row>
+            @empty
+                <flux:row>
+                    <flux:cell colspan="100" class="text-center text-muted-foreground py-6">No {{ modelNameLowerPlural }} found.</flux:cell>
+                </flux:row>
+            @endforelse
+        </flux:rows>
+    </flux:table>
+</div>

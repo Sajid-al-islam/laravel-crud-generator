@@ -1,0 +1,34 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Livewire\{{ modelNamePlural }};
+
+use App\Models\{{ modelName }};
+use Illuminate\Contracts\View\View;
+use Livewire\Component;
+{{ useStatements }}
+
+class Show extends Component
+{
+    public {{ modelName }} ${{ modelVariable }};
+
+    public function mount({{ modelName }} ${{ modelVariable }})
+    {
+        $this->{{ modelVariable }} = ${{ modelVariable }};
+    }
+
+    public function delete()
+    {
+        ${{ serviceDeleteLine }};
+
+        session()->flash('success', '{{ modelName }} deleted successfully.');
+
+        return $this->redirectRoute('{{ routePrefix }}.index');
+    }
+
+    public function render(): View
+    {
+        return view('livewire.{{ routePrefix }}.show');
+    }
+}

@@ -1,0 +1,43 @@
+<script lang="ts">
+    import { Head, Link, useForm } from '@inertiajs/svelte';
+    import AppLayout from '@/layouts/AppLayout.svelte';
+    import * as Form from '@/components/ui/form';
+    import { Input } from '@/components/ui/input';
+    import { Textarea } from '@/components/ui/textarea';
+    import { Switch } from '@/components/ui/switch';
+    import { Button } from '@/components/ui/button';
+{{ svelteImports }}
+
+    const form = useForm({
+{{ formInitialValues }}
+    });
+
+    function submit(e: SubmitEvent) {
+        e.preventDefault();
+        $form.post('{{ routePrefix }}');
+    }
+</script>
+
+<Head title="Create {{ modelName }}" />
+
+<AppLayout>
+    <div class="p-6 max-w-2xl">
+        <div class="mb-4 flex items-center justify-between">
+            <h1 class="text-2xl font-semibold">Create {{ modelName }}</h1>
+            <Button variant="outline">
+                <Link href="{{ routePrefix }}">Back</Link>
+            </Button>
+        </div>
+
+        <form onsubmit={submit} class="space-y-4">
+{{ formFields }}
+
+            <div class="flex justify-end gap-2">
+                <Button type="button" variant="outline">
+                    <Link href="{{ routePrefix }}">Cancel</Link>
+                </Button>
+                <Button type="submit" disabled={$form.processing}>Create {{ modelName }}</Button>
+            </div>
+        </form>
+    </div>
+</AppLayout>

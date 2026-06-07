@@ -1,0 +1,17 @@
+<div class="p-6 max-w-2xl">
+    <div class="mb-4 flex items-center justify-between">
+        <flux:heading size="xl">{{ modelName }} Details</flux:heading>
+        <div class="flex gap-2">
+            <flux:button href="{{ route('{{ routePrefix }}.edit', ${{ modelVariable }}) }}" wire:navigate>Edit</flux:button>
+            <flux:button href="{{ route('{{ routePrefix }}.index') }}" wire:navigate>Back</flux:button>
+        </div>
+    </div>
+
+    <div class="rounded-md border divide-y">
+{{ showFields }}
+    </div>
+
+    <div class="mt-4">
+        <flux:button variant="danger" wire:click="delete" wire:confirm="Are you sure?">Delete</flux:button>
+    </div>
+</div>

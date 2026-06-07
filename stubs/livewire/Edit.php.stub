@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Livewire\{{ modelNamePlural }};
+
+use App\Models\{{ modelName }};
+use Illuminate\Contracts\View\View;
+use Livewire\Attributes\Validate;
+use Livewire\Component;
+{{ useStatements }}
+
+class Edit extends Component
+{
+    public {{ modelName }} ${{ modelVariable }};
+
+{{ formProperties }}
+
+    public function mount({{ modelName }} ${{ modelVariable }})
+    {
+        $this->{{ modelVariable }} = ${{ modelVariable }};
+{{ formMount }}
+    }
+
+    public function save()
+    {
+        $this->validate();
+
+        ${{ serviceUpdate }};
+
+        session()->flash('success', '{{ modelName }} updated successfully.');
+
+        return $this->redirectRoute('{{ routePrefix }}.index');
+    }
+
+    public function render(): View
+    {
+        return view('livewire.{{ routePrefix }}.edit');
+    }
+}

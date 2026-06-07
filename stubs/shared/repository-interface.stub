@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ repositoryContractNamespace }};
+
+use {{ modelNamespace }}\{{ modelName }};
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+
+interface {{ modelName }}RepositoryInterface
+{
+    public function paginate(int $perPage = 15): LengthAwarePaginator;
+
+    public function findOrFail(int $id): {{ modelName }};
+
+    public function create(array $data): {{ modelName }};
+
+    public function update({{ modelName }} ${{ modelVariable }}, array $data): {{ modelName }};
+
+    public function delete({{ modelName }} ${{ modelVariable }}): bool;
+}
